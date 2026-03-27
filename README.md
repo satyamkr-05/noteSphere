@@ -128,7 +128,7 @@ npm run preview  # preview built frontend
 - Title limit: 100 characters
 - Subject limit: 60 characters
 - Description limit: 500 characters
-- Upload limit: 1 file per note, up to 5 MB
+- Upload limit: 1 file per note, up to 10 MB
 - Public, dashboard, and admin note lists are paginated for better scaling
 - Note and user search now use MongoDB text indexes
 - Set `UPLOAD_DIR` in production so uploads live in a persistent folder instead of ephemeral storage
