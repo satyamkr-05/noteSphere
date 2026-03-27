@@ -1,3 +1,6 @@
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
@@ -11,6 +14,11 @@ dotenv.config();
 
 const app = express();
 const allowedOrigins = getAllowedOrigins();
+const currentFilePath = fileURLToPath(import.meta.url);
+const currentDirPath = path.dirname(currentFilePath);
+const distDir = path.resolve(currentDirPath, "..", "..", "dist");
+const distIndexPath = path.join(distDir, "index.html");
+const hasFrontendBuild = fs.existsSync(distIndexPath);
 
 app.use(
   cors({
@@ -36,7 +44,23 @@ app.use("/api/auth", authRoutes);
 app.use("/api/notes", noteRoutes);
 app.use("/api/admin", adminRoutes);
 
-app.use(notFound);
+app.use("/api", notFound);
+
+if (hasFrontendBuild) {
+  app.use(express.static(distDir));
+
+  app.get("*", (req, res, next) => {
+    if (req.path.startsWith("/api") || path.extname(req.path)) {
+      next();
+      return;
+    }
+
+    res.sendFile(distIndexPath);
+  });
+} else {
+  app.use(notFound);
+}
+
 app.use(errorHandler);
 
 export default app;

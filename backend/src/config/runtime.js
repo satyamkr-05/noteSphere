@@ -14,17 +14,17 @@ export function getAllowedOrigins() {
     .map((url) => url.trim())
     .filter(Boolean);
 
-  if (configuredOrigins?.length) {
-    return configuredOrigins;
-  }
-
   const defaults = ["http://127.0.0.1:5173", "http://localhost:5173"];
 
   if (process.env.VERCEL_URL) {
     defaults.push(`https://${process.env.VERCEL_URL}`);
   }
 
-  return defaults;
+  if (process.env.RAILWAY_PUBLIC_DOMAIN) {
+    defaults.push(`https://${process.env.RAILWAY_PUBLIC_DOMAIN}`);
+  }
+
+  return [...new Set([...(configuredOrigins || []), ...defaults])];
 }
 
 export function getAdminEmail() {
