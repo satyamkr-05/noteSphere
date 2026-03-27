@@ -1,0 +1,534 @@
+import { useEffect, useState } from "react";
+import NotePreviewModal from "../components/NotePreviewModal";
+import PaginationControls from "../components/PaginationControls";
+import { useAuth } from "../context/AuthContext";
+import { useReveal } from "../components/useReveal";
+import api, { getErrorMessage } from "../services/api";
+import { NOTE_LIMITS } from "../../shared/noteLimits.js";
+import { formatCharacterCount, validateNoteForm } from "../utils/noteValidation";
+
+const initialForm = {
+  title: "",
+  subject: "",
+  description: "",
+  featured: false
+};
+
+const initialNotesSummary = {
+  totalNotes: 0,
+  totalFeaturedNotes: 0,
+  approvedNotes: 0,
+  pendingNotes: 0,
+  rejectedNotes: 0
+};
+
+const initialUsersSummary = {
+  totalAccounts: 0,
+  totalNotes: 0,
+  activeUploaders: 0
+};
+
+const initialPagination = {
+  currentPage: 1,
+  limit: 12,
+  totalItems: 0,
+  totalPages: 1,
+  hasPreviousPage: false,
+  hasNextPage: false
+};
+
+const initialUserPagination = {
+  ...initialPagination,
+  limit: 9
+};
+
+export default function AdminPage({ onNotesChanged, showToast }) {
+  const { user } = useAuth();
+  const [notes, setNotes] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [isNotesLoading, setIsNotesLoading] = useState(true);
+  const [isUsersLoading, setIsUsersLoading] = useState(true);
+  const [editingNoteId, setEditingNoteId] = useState("");
+  const [form, setForm] = useState(initialForm);
+  const [isSaving, setIsSaving] = useState(false);
+  const [previewNote, setPreviewNote] = useState(null);
+  const [notesSummary, setNotesSummary] = useState(initialNotesSummary);
+  const [usersSummary, setUsersSummary] = useState(initialUsersSummary);
+  const [notesPagination, setNotesPagination] = useState(initialPagination);
+  const [usersPagination, setUsersPagination] = useState(initialUserPagination);
+  const [notesPage, setNotesPage] = useState(1);
+  const [usersPage, setUsersPage] = useState(1);
+
+  useReveal([notes.length, users.length, editingNoteId]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      loadNotes(notesPage);
+    }, 250);
+
+    return () => window.clearTimeout(timer);
+  }, [notesPage, searchQuery]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      loadUsers(usersPage);
+    }, 250);
+
+    return () => window.clearTimeout(timer);
+  }, [userSearchQuery, usersPage]);
+
+  async function loadNotes(pageToLoad = notesPage) {
+    try {
+      setIsNotesLoading(true);
+      const response = await api.get("/admin/notes", {
+        params: {
+          ...(searchQuery ? { search: searchQuery } : {}),
+          page: pageToLoad,
+          limit: initialPagination.limit
+        }
+      });
+      setNotes(response.data.notes);
+      setNotesSummary(response.data.summary || initialNotesSummary);
+      setNotesPagination(response.data.pagination || initialPagination);
+      if (response.data.pagination?.currentPage && response.data.pagination.currentPage !== pageToLoad) {
+        setNotesPage(response.data.pagination.currentPage);
+      }
+    } catch (error) {
+      setNotes([]);
+      setNotesSummary(initialNotesSummary);
+      setNotesPagination(initialPagination);
+      showToast(getErrorMessage(error, "Unable to load admin notes."), "error");
+    } finally {
+      setIsNotesLoading(false);
+    }
+  }
+
+  async function loadUsers(pageToLoad = usersPage) {
+    try {
+      setIsUsersLoading(true);
+      const response = await api.get("/admin/users", {
+        params: {
+          ...(userSearchQuery ? { search: userSearchQuery } : {}),
+          page: pageToLoad,
+          limit: initialUserPagination.limit
+        }
+      });
+      setUsers(response.data.users);
+      setUsersSummary(response.data.summary || initialUsersSummary);
+      setUsersPagination(response.data.pagination || initialUserPagination);
+      if (response.data.pagination?.currentPage && response.data.pagination.currentPage !== pageToLoad) {
+        setUsersPage(response.data.pagination.currentPage);
+      }
+    } catch (error) {
+      setUsers([]);
+      setUsersSummary(initialUsersSummary);
+      setUsersPagination(initialUserPagination);
+      showToast(getErrorMessage(error, "Unable to load user accounts."), "error");
+    } finally {
+      setIsUsersLoading(false);
+    }
+  }
+
+  function resetEditor() {
+    setEditingNoteId("");
+    setForm(initialForm);
+  }
+
+  function startEditing(note) {
+    setEditingNoteId(note.id);
+    setForm({
+      title: note.title,
+      subject: note.subject,
+      description: note.description,
+      featured: note.featured
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function handleSaveNote(event) {
+    event.preventDefault();
+
+    const { error, value } = validateNoteForm(form);
+    if (error) {
+      showToast(error, "error");
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      await api.put(`/admin/notes/${editingNoteId}`, {
+        title: value.title,
+        subject: value.subject,
+        description: value.description,
+        featured: value.featured
+      });
+      showToast("Note updated successfully.", "success");
+      resetEditor();
+      await loadNotes(notesPage);
+      onNotesChanged();
+    } catch (error) {
+      showToast(getErrorMessage(error, "Unable to update this note."), "error");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleDeleteNote(noteId) {
+    if (!window.confirm("Delete this note permanently?")) {
+      return;
+    }
+
+    try {
+      await api.delete(`/admin/notes/${noteId}`);
+      showToast("Note deleted successfully.", "success");
+      if (editingNoteId === noteId) {
+        resetEditor();
+      }
+      await Promise.all([loadNotes(notesPage), loadUsers(usersPage)]);
+      onNotesChanged();
+    } catch (error) {
+      showToast(getErrorMessage(error, "Unable to delete this note."), "error");
+    }
+  }
+
+  async function handleDeleteUser(userId) {
+    if (!window.confirm("Delete this account and all notes uploaded by this user?")) {
+      return;
+    }
+
+    try {
+      await api.delete(`/admin/users/${userId}`);
+      showToast("User account deleted successfully.", "success");
+      await Promise.all([loadUsers(usersPage), loadNotes(notesPage)]);
+      onNotesChanged();
+    } catch (error) {
+      showToast(getErrorMessage(error, "Unable to delete this user account."), "error");
+    }
+  }
+
+  return (
+    <section className="section">
+      <div className="container">
+        <div className="split-layout admin-layout">
+          <div className="split-layout__intro reveal">
+            <span className="eyebrow">Admin Panel</span>
+            <h2>Moderate notes and manage platform accounts</h2>
+            <p>
+              Review every upload, edit note details, and manage platform accounts from one place.
+            </p>
+
+            <div className="info-stack">
+              <article className="info-card glass-card">
+                <i className="fa-solid fa-shield-halved"></i>
+                <div>
+                  <h3>{user?.name || "Administrator"}</h3>
+                  <p>Reserved administrative access is active for this workspace.</p>
+                </div>
+              </article>
+              <article className="info-card glass-card">
+                <i className="fa-solid fa-users-gear"></i>
+                <div>
+                  <h3>All-in-one control</h3>
+                  <p>Handle note review, editing, deletion, and account cleanup from one place.</p>
+                </div>
+              </article>
+            </div>
+
+            <div className="admin-summary-grid">
+              <article className="stat-card glass-card">
+                <strong>{notesSummary.totalNotes}</strong>
+                <span>Total Notes</span>
+              </article>
+              <article className="stat-card glass-card">
+                <strong>{notesSummary.totalFeaturedNotes}</strong>
+                <span>Featured Notes</span>
+              </article>
+              <article className="stat-card glass-card">
+                <strong>{usersSummary.totalAccounts}</strong>
+                <span>Total Accounts</span>
+              </article>
+              <article className="stat-card glass-card">
+                <strong>{usersSummary.activeUploaders}</strong>
+                <span>Active Uploaders</span>
+              </article>
+            </div>
+          </div>
+
+          <form className="upload-form glass-card reveal" onSubmit={handleSaveNote}>
+            <div className="section-heading dashboard-editor__heading">
+              <span className="eyebrow">Note Editor</span>
+              <h2>{editingNoteId ? "Edit selected note" : "Choose a note to manage"}</h2>
+              <p>
+                {editingNoteId
+                  ? "Update the note metadata and save the changes."
+                  : "Use the controls below to select a note for editing."}
+              </p>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="adminNoteTitle">Note Title</label>
+              <input
+                type="text"
+                id="adminNoteTitle"
+                value={form.title}
+                onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
+                maxLength={NOTE_LIMITS.titleMaxLength}
+                disabled={!editingNoteId}
+                required
+              />
+              <small className="form-hint">
+                <span>Max {NOTE_LIMITS.titleMaxLength} characters.</span>
+                <span>{formatCharacterCount(form.title, NOTE_LIMITS.titleMaxLength)}</span>
+              </small>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="adminNoteSubject">Subject</label>
+              <input
+                type="text"
+                id="adminNoteSubject"
+                value={form.subject}
+                onChange={(event) => setForm((current) => ({ ...current, subject: event.target.value }))}
+                maxLength={NOTE_LIMITS.subjectMaxLength}
+                disabled={!editingNoteId}
+                required
+              />
+              <small className="form-hint">
+                <span>Max {NOTE_LIMITS.subjectMaxLength} characters.</span>
+                <span>{formatCharacterCount(form.subject, NOTE_LIMITS.subjectMaxLength)}</span>
+              </small>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="adminNoteDescription">Description</label>
+              <textarea
+                id="adminNoteDescription"
+                rows="4"
+                value={form.description}
+                onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
+                maxLength={NOTE_LIMITS.descriptionMaxLength}
+                disabled={!editingNoteId}
+                required
+              ></textarea>
+              <small className="form-hint">
+                <span>Max {NOTE_LIMITS.descriptionMaxLength} characters.</span>
+                <span>{formatCharacterCount(form.description, NOTE_LIMITS.descriptionMaxLength)}</span>
+              </small>
+            </div>
+
+            <div className="form-group checkbox-row">
+              <input
+                id="adminFeatured"
+                type="checkbox"
+                checked={form.featured}
+                onChange={(event) => setForm((current) => ({ ...current, featured: event.target.checked }))}
+                disabled={!editingNoteId}
+              />
+              <label htmlFor="adminFeatured">Featured note</label>
+            </div>
+
+            <div className="form-actions">
+              <button type="submit" className="btn btn--primary btn--full" disabled={!editingNoteId || isSaving}>
+                {isSaving ? "Saving..." : "Save Changes"}
+              </button>
+              {editingNoteId ? (
+                <button type="button" className="btn btn--secondary btn--full" onClick={resetEditor}>
+                  Cancel
+                </button>
+              ) : null}
+            </div>
+          </form>
+        </div>
+
+        <section className="section section--compact">
+          <div className="section-heading reveal">
+            <span className="eyebrow">Manage Notes</span>
+            <h2>Review every uploaded resource</h2>
+            <p>All uploads are published directly, so no admin approval is required.</p>
+          </div>
+
+          <div className="explore-toolbar glass-card reveal">
+            <div className="search-field">
+              <i className="fa-solid fa-magnifying-glass"></i>
+              <input
+                type="text"
+                placeholder="Search notes by title, subject, or description"
+                value={searchQuery}
+                onChange={(event) => {
+                  setSearchQuery(event.target.value);
+                  setNotesPage(1);
+                }}
+              />
+            </div>
+
+            <div className="admin-toolbar-actions">
+              <button
+                type="button"
+                className="btn btn--secondary"
+                onClick={() => {
+                  setSearchQuery("");
+                  setNotesPage(1);
+                }}
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+
+          {isNotesLoading ? <div className="page-status glass-card">Loading admin notes...</div> : null}
+
+          <div className="notes-grid">
+            {notes.map((note) => (
+              <article key={note.id} className="note-card glass-card reveal is-visible">
+                <div className="note-card__header">
+                  <span className="note-card__chip">{note.subject}</span>
+                  {note.featured ? <span className="status-badge status-badge--approved">Featured</span> : null}
+                </div>
+                <h3>{note.title}</h3>
+                <p>{note.description}</p>
+                <div className="note-card__meta">
+                  <span><i className="fa-solid fa-user"></i> {note.uploadedBy?.name || "Unknown user"}</span>
+                  <span><i className="fa-solid fa-file-lines"></i> {note.fileName}</span>
+                </div>
+                <div className="note-card__meta">
+                  <span><i className="fa-solid fa-download"></i> {note.downloads}</span>
+                  <span><i className="fa-regular fa-clock"></i> {formatDate(note.createdAt)}</span>
+                </div>
+                <div className="note-card__actions">
+                  <div className="note-card__buttons">
+                    <button type="button" className="btn btn--secondary" onClick={() => setPreviewNote(note)}>
+                      Preview
+                    </button>
+                    <button type="button" className="btn btn--secondary" onClick={() => startEditing(note)}>
+                      Edit
+                    </button>
+                    <button type="button" className="btn btn--primary" onClick={() => handleDeleteNote(note.id)}>
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          {!isNotesLoading && notes.length === 0 ? (
+            <p className="empty-state glass-card">No notes match the current admin filters.</p>
+          ) : null}
+
+          {!isNotesLoading && notes.length > 0 ? (
+            <PaginationControls
+              pagination={notesPagination}
+              onPageChange={setNotesPage}
+              itemLabel="notes"
+            />
+          ) : null}
+        </section>
+
+        <section className="section section--compact">
+          <div className="section-heading reveal">
+            <span className="eyebrow">Accounts</span>
+            <h2>Manage registered users</h2>
+            <p>{usersSummary.totalAccounts} total accounts have been created on the platform.</p>
+          </div>
+
+          <div className="explore-toolbar glass-card reveal">
+            <div className="search-field">
+              <i className="fa-solid fa-magnifying-glass"></i>
+              <input
+                type="text"
+                placeholder="Search users by name or email"
+                value={userSearchQuery}
+                onChange={(event) => {
+                  setUserSearchQuery(event.target.value);
+                  setUsersPage(1);
+                }}
+              />
+            </div>
+
+            <div className="admin-toolbar-actions">
+              <button
+                type="button"
+                className="btn btn--secondary"
+                onClick={() => {
+                  setUserSearchQuery("");
+                  setUsersPage(1);
+                }}
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+
+          {isUsersLoading ? <div className="page-status glass-card">Loading user accounts...</div> : null}
+
+          <div className="admin-users-grid">
+            {users.map((account) => (
+              <article key={account.id} className="user-card glass-card reveal is-visible">
+                <div className="user-card__header">
+                  <div>
+                    <h3>{account.name}</h3>
+                    <p>{account.email}</p>
+                  </div>
+                  {account.isAdmin ? <span className="status-badge status-badge--approved">Admin</span> : null}
+                </div>
+
+                <div className="user-card__meta">
+                  <span><i className="fa-solid fa-note-sticky"></i> {account.uploadedNotes} notes</span>
+                  <span><i className="fa-regular fa-calendar"></i> Joined {formatDate(account.createdAt)}</span>
+                </div>
+
+                <div className="user-card__content-types">
+                  <strong>Shared content</strong>
+                  {account.sharedContentTypes?.length ? (
+                    <div className="content-tags">
+                      {account.sharedContentTypes.map((content) => (
+                        <span key={`${account.id}-${content.type}`} className="content-tag">
+                          {content.type} ({content.count})
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p>No uploads yet.</p>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  className="btn btn--primary btn--full"
+                  onClick={() => handleDeleteUser(account.id)}
+                  disabled={account.isAdmin}
+                >
+                  {account.isAdmin ? "Primary Admin Account" : "Delete Account"}
+                </button>
+              </article>
+            ))}
+          </div>
+
+          {!isUsersLoading && users.length === 0 ? (
+            <p className="empty-state glass-card">No user accounts were found.</p>
+          ) : null}
+
+          {!isUsersLoading && users.length > 0 ? (
+            <PaginationControls
+              pagination={usersPagination}
+              onPageChange={setUsersPage}
+              itemLabel="accounts"
+            />
+          ) : null}
+        </section>
+
+        <NotePreviewModal note={previewNote} onClose={() => setPreviewNote(null)} showToast={showToast} />
+      </div>
+    </section>
+  );
+}
+
+function formatDate(dateValue) {
+  return new Date(dateValue).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric"
+  });
+}

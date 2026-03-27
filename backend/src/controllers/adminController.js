@@ -1,0 +1,341 @@
+import path from "path";
+import User from "../models/User.js";
+import Note from "../models/Note.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { createToken } from "../utils/createToken.js";
+import {
+  buildPagination,
+  parsePagination,
+  serializePagination
+} from "../utils/pagination.js";
+import { serializeNote } from "../utils/serializeNote.js";
+import { AppError } from "../utils/appError.js";
+import { removeStoredFile } from "../utils/noteFiles.js";
+import { getAdminEmail, isAdminEmail } from "../config/runtime.js";
+import { NOTE_LIMITS } from "../../../shared/noteLimits.js";
+
+function getContentTypeLabel(fileName = "") {
+  const extension = path.extname(fileName).toLowerCase();
+
+  if ([".jpg", ".jpeg", ".png", ".gif", ".webp"].includes(extension)) {
+    return "Image";
+  }
+
+  if (!extension) {
+    return "Other";
+  }
+
+  return extension.slice(1).toUpperCase();
+}
+
+function serializeAdminUser(user, uploadedNotes = 0, sharedContentTypes = []) {
+  return {
+    id: user._id,
+    name: user.name,
+    email: user.email,
+    isAdmin: isAdminEmail(user.email),
+    createdAt: user.createdAt,
+    uploadedNotes,
+    sharedContentTypes
+  };
+}
+
+function buildAdminAuthResponse(user) {
+  return {
+    token: createToken(user._id),
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      isAdmin: true
+    }
+  };
+}
+
+function normalizeText(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function validateRequiredTextField(res, label, value, maxLength) {
+  const normalizedValue = normalizeText(value);
+
+  if (!normalizedValue) {
+    res.status(400);
+    throw new Error(`${label} is required.`);
+  }
+
+  if (normalizedValue.length > maxLength) {
+    res.status(400);
+    throw new Error(`${label} must be ${maxLength} characters or fewer.`);
+  }
+
+  return normalizedValue;
+}
+
+function validateStatus(status) {
+  const normalizedStatus = normalizeText(status).toLowerCase();
+  const allowedStatuses = ["pending", "approved", "rejected"];
+
+  if (!allowedStatuses.includes(normalizedStatus)) {
+    throw new AppError("Status must be pending, approved, or rejected.", 400);
+  }
+
+  return normalizedStatus;
+}
+
+function buildTextSearchFilter(search = "") {
+  const normalizedSearch = search.trim();
+
+  if (!normalizedSearch) {
+    return { filter: {}, hasSearchQuery: false };
+  }
+
+  return {
+    filter: { $text: { $search: normalizedSearch } },
+    hasSearchQuery: true
+  };
+}
+
+async function findNoteWithRelations(noteId) {
+  return Note.findById(noteId)
+    .populate("uploadedBy", "name email")
+    .populate("reviewedBy", "name email");
+}
+
+export const loginAdmin = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    throw new AppError("Email and password are required.", 400);
+  }
+
+  if (!isAdminEmail(email)) {
+    throw new AppError("Only the configured admin account can access this page.", 403);
+  }
+
+  const user = await User.findOne({ email: email.trim().toLowerCase() }).select("+password");
+
+  if (!user || !(await user.matchPassword(password))) {
+    throw new AppError("Invalid admin email or password.", 401);
+  }
+
+  res.json(buildAdminAuthResponse(user));
+});
+
+export const getAdminNotes = asyncHandler(async (req, res) => {
+  const { status = "", search = "" } = req.query;
+  const normalizedStatus = status.trim().toLowerCase();
+  const requestedPagination = parsePagination(req.query, {
+    defaultLimit: 12,
+    maxLimit: 36
+  });
+  const { filter, hasSearchQuery } = buildTextSearchFilter(search);
+
+  if (normalizedStatus) {
+    filter.status = normalizedStatus;
+  }
+
+  const [
+    totalItems,
+    totalNotes,
+    totalFeaturedNotes,
+    approvedNotes,
+    pendingNotes,
+    rejectedNotes
+  ] = await Promise.all([
+    Note.countDocuments(filter),
+    Note.countDocuments({}),
+    Note.countDocuments({ featured: true }),
+    Note.countDocuments({ status: "approved" }),
+    Note.countDocuments({ status: "pending" }),
+    Note.countDocuments({ status: "rejected" })
+  ]);
+  const pagination = buildPagination(requestedPagination, totalItems);
+
+  const notes = await Note.find(
+    filter,
+    hasSearchQuery ? { score: { $meta: "textScore" } } : {}
+  )
+    .populate("uploadedBy", "name email")
+    .populate("reviewedBy", "name email")
+    .sort(
+      hasSearchQuery
+        ? { score: { $meta: "textScore" }, createdAt: -1 }
+        : { createdAt: -1 }
+    )
+    .skip(pagination.skip)
+    .limit(pagination.limit);
+
+  res.json({
+    summary: {
+      totalNotes,
+      totalFeaturedNotes,
+      approvedNotes,
+      pendingNotes,
+      rejectedNotes
+    },
+    notes: notes.map((note) => serializeNote(req, note)),
+    pagination: serializePagination(pagination)
+  });
+});
+
+export const updateAdminNote = asyncHandler(async (req, res) => {
+  const note = await findNoteWithRelations(req.params.id);
+
+  if (!note) {
+    throw new AppError("Note not found.", 404);
+  }
+
+  const { title, subject, description, featured, status } = req.body;
+
+  note.title = validateRequiredTextField(res, "Title", title, NOTE_LIMITS.titleMaxLength);
+  note.subject = validateRequiredTextField(res, "Subject", subject, NOTE_LIMITS.subjectMaxLength);
+  note.description = validateRequiredTextField(
+    res,
+    "Description",
+    description,
+    NOTE_LIMITS.descriptionMaxLength
+  );
+  note.featured = featured === true || featured === "true";
+
+  if (status !== undefined) {
+    note.status = validateStatus(status);
+    note.reviewedBy = req.user._id;
+    note.reviewedAt = new Date();
+  }
+
+  await note.save();
+  await note.populate("uploadedBy", "name email");
+  await note.populate("reviewedBy", "name email");
+
+  res.json({ note: serializeNote(req, note) });
+});
+
+async function updateReviewStatus(req, res, nextStatus) {
+  const note = await findNoteWithRelations(req.params.id);
+
+  if (!note) {
+    throw new AppError("Note not found.", 404);
+  }
+
+  note.status = nextStatus;
+  note.reviewedBy = req.user._id;
+  note.reviewedAt = new Date();
+
+  await note.save();
+  await note.populate("uploadedBy", "name email");
+  await note.populate("reviewedBy", "name email");
+
+  res.json({ note: serializeNote(req, note) });
+}
+
+export const approveNote = asyncHandler(async (req, res) => {
+  await updateReviewStatus(req, res, "approved");
+});
+
+export const rejectNote = asyncHandler(async (req, res) => {
+  await updateReviewStatus(req, res, "rejected");
+});
+
+export const deleteAdminNote = asyncHandler(async (req, res) => {
+  const note = await Note.findById(req.params.id);
+
+  if (!note) {
+    throw new AppError("Note not found.", 404);
+  }
+
+  removeStoredFile(note.filePath);
+  await note.deleteOne();
+
+  res.json({ message: "Note deleted successfully." });
+});
+
+export const getAdminUsers = asyncHandler(async (req, res) => {
+  const { search = "" } = req.query;
+  const requestedPagination = parsePagination(req.query, {
+    defaultLimit: 9,
+    maxLimit: 30
+  });
+  const { filter, hasSearchQuery } = buildTextSearchFilter(search);
+  const [totalItems, totalAccounts, totalNotes, activeUploaderIds] = await Promise.all([
+    User.countDocuments(filter),
+    User.countDocuments({}),
+    Note.countDocuments({}),
+    Note.distinct("uploadedBy")
+  ]);
+  const pagination = buildPagination(requestedPagination, totalItems);
+  const users = await User.find(
+    filter,
+    hasSearchQuery ? { score: { $meta: "textScore" } } : {}
+  )
+    .sort(
+      hasSearchQuery
+        ? { score: { $meta: "textScore" }, createdAt: -1 }
+        : { createdAt: -1 }
+    )
+    .skip(pagination.skip)
+    .limit(pagination.limit);
+  const userIds = users.map((user) => user._id);
+  const userNotes = userIds.length
+    ? await Note.find({ uploadedBy: { $in: userIds } }, "uploadedBy fileName")
+    : [];
+  const noteCountMap = new Map();
+  const contentTypeMap = new Map();
+
+  for (const note of userNotes) {
+    const userId = String(note.uploadedBy);
+    noteCountMap.set(userId, (noteCountMap.get(userId) || 0) + 1);
+
+    if (!contentTypeMap.has(userId)) {
+      contentTypeMap.set(userId, new Map());
+    }
+
+    const contentLabel = getContentTypeLabel(note.fileName);
+    const userContentMap = contentTypeMap.get(userId);
+    userContentMap.set(contentLabel, (userContentMap.get(contentLabel) || 0) + 1);
+  }
+
+  res.json({
+    summary: {
+      totalAccounts,
+      totalNotes,
+      activeUploaders: activeUploaderIds.length
+    },
+    users: users.map((user) => {
+      const userId = String(user._id);
+      const contentEntries = Array.from(contentTypeMap.get(userId)?.entries() || [])
+        .sort((left, right) => left[0].localeCompare(right[0]))
+        .map(([type, count]) => ({ type, count }));
+
+      return serializeAdminUser(
+        user,
+        noteCountMap.get(userId) || 0,
+        contentEntries
+      );
+    }),
+    pagination: serializePagination(pagination)
+  });
+});
+
+export const deleteAdminUser = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+
+  if (!user) {
+    throw new AppError("User account not found.", 404);
+  }
+
+  if (user.email === getAdminEmail()) {
+    throw new AppError("The configured admin account cannot be deleted.", 403);
+  }
+
+  const notes = await Note.find({ uploadedBy: user._id });
+
+  for (const note of notes) {
+    removeStoredFile(note.filePath);
+  }
+
+  await Note.deleteMany({ uploadedBy: user._id });
+  await user.deleteOne();
+
+  res.json({ message: "User account deleted successfully." });
+});
