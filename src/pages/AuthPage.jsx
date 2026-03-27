@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useReveal } from "../components/useReveal";
 import { getErrorMessage } from "../services/api";
@@ -116,6 +116,9 @@ export default function AuthPage({ showToast }) {
                     <i className={`fa-regular ${showLoginPassword ? "fa-eye-slash" : "fa-eye"}`}></i>
                   </button>
                 </div>
+                <Link to="/forgot-password" className="text-link auth-form__helper-link">
+                  Forgot password?
+                </Link>
               </div>
               <button type="submit" className="btn btn--primary btn--full" disabled={isSubmitting}>
                 {isSubmitting ? "Please wait..." : "Login"}

@@ -1,7 +1,9 @@
+import crypto from "crypto";
 import User from "../models/User.js";
-import { isAdminEmail } from "../config/runtime.js";
+import { getPrimaryClientUrl, isAdminEmail } from "../config/runtime.js";
 import { createToken } from "../utils/createToken.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { isMailConfigured, sendPasswordResetEmail } from "../utils/sendEmail.js";
 
 function normalizeName(value = "") {
   return value.trim();
@@ -9,6 +11,30 @@ function normalizeName(value = "") {
 
 function normalizeEmail(value = "") {
   return value.trim().toLowerCase();
+}
+
+function normalizePassword(value = "") {
+  return value.trim();
+}
+
+function getPasswordResetWindowMs() {
+  const configuredMinutes = Number(process.env.RESET_PASSWORD_TTL_MINUTES || 30);
+  const safeMinutes = Number.isFinite(configuredMinutes) && configuredMinutes > 0
+    ? configuredMinutes
+    : 30;
+
+  return safeMinutes * 60 * 1000;
+}
+
+function createPasswordResetState() {
+  const rawToken = crypto.randomBytes(32).toString("hex");
+  const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
+
+  return {
+    rawToken,
+    hashedToken,
+    expiresAt: new Date(Date.now() + getPasswordResetWindowMs())
+  };
 }
 
 function serializeUser(user) {
@@ -75,5 +101,105 @@ export const loginUser = asyncHandler(async (req, res) => {
 export const getCurrentUser = asyncHandler(async (req, res) => {
   res.json({
     user: serializeUser(req.user)
+  });
+});
+
+export const requestPasswordReset = asyncHandler(async (req, res) => {
+  const normalizedEmail = normalizeEmail(req.body.email);
+
+  if (!normalizedEmail) {
+    res.status(400);
+    throw new Error("Email is required.");
+  }
+
+  const user = await User.findOne({ email: normalizedEmail }).select(
+    "+passwordResetToken +passwordResetExpiresAt"
+  );
+  const successMessage =
+    "If an account with that email exists, a password reset link has been sent.";
+
+  if (!user) {
+    res.json({ message: successMessage });
+    return;
+  }
+
+  const { rawToken, hashedToken, expiresAt } = createPasswordResetState();
+  const resetUrl = `${getPrimaryClientUrl()}/reset-password/${rawToken}`;
+
+  user.passwordResetToken = hashedToken;
+  user.passwordResetExpiresAt = expiresAt;
+  await user.save();
+
+  if (!isMailConfigured()) {
+    if (process.env.NODE_ENV === "production") {
+      user.passwordResetToken = undefined;
+      user.passwordResetExpiresAt = undefined;
+      await user.save();
+      res.status(503);
+      throw new Error("Password reset email is not configured yet. Add SMTP settings to the environment variables.");
+    }
+
+    res.json({
+      message: "Email is not configured locally yet. Use the reset link below for testing.",
+      resetUrl
+    });
+    return;
+  }
+
+  try {
+    await sendPasswordResetEmail({
+      email: user.email,
+      name: user.name,
+      resetUrl,
+      expiresAt
+    });
+  } catch {
+    user.passwordResetToken = undefined;
+    user.passwordResetExpiresAt = undefined;
+    await user.save();
+    res.status(503);
+    throw new Error("We couldn't send the password reset email right now. Please try again in a moment.");
+  }
+
+  res.json({ message: successMessage });
+});
+
+export const resetPassword = asyncHandler(async (req, res) => {
+  const password = normalizePassword(req.body.password);
+  const confirmPassword = normalizePassword(req.body.confirmPassword);
+
+  if (!password || !confirmPassword) {
+    res.status(400);
+    throw new Error("Password and confirm password are required.");
+  }
+
+  if (password.length < 6) {
+    res.status(400);
+    throw new Error("Password must be at least 6 characters long.");
+  }
+
+  if (password !== confirmPassword) {
+    res.status(400);
+    throw new Error("Passwords do not match.");
+  }
+
+  const hashedToken = crypto.createHash("sha256").update(req.params.token || "").digest("hex");
+  const user = await User.findOne({
+    passwordResetToken: hashedToken,
+    passwordResetExpiresAt: { $gt: new Date() }
+  }).select("+password +passwordResetToken +passwordResetExpiresAt");
+
+  if (!user) {
+    res.status(400);
+    throw new Error("This password reset link is invalid or has expired.");
+  }
+
+  user.password = password;
+  user.passwordResetToken = undefined;
+  user.passwordResetExpiresAt = undefined;
+  await user.save();
+
+  res.json({
+    message: "Password reset successful. You can now log in with your new password."
   });
 });

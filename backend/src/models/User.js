@@ -20,6 +20,14 @@ const userSchema = new mongoose.Schema(
       required: true,
       minlength: 6,
       select: false
+    },
+    passwordResetToken: {
+      type: String,
+      select: false
+    },
+    passwordResetExpiresAt: {
+      type: Date,
+      select: false
     }
   },
   {

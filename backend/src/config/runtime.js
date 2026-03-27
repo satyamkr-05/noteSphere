@@ -3,6 +3,12 @@ import path from "path";
 export const isVercel = process.env.VERCEL === "1";
 const configuredUploadDir = process.env.UPLOAD_DIR?.trim();
 
+function getConfiguredClientOrigins() {
+  return process.env.CLIENT_URL?.split(",")
+    .map((url) => url.trim())
+    .filter(Boolean) || [];
+}
+
 export const uploadDir = configuredUploadDir
   ? path.resolve(configuredUploadDir)
   : isVercel
@@ -10,9 +16,7 @@ export const uploadDir = configuredUploadDir
     : path.join(process.cwd(), "backend", "uploads");
 
 export function getAllowedOrigins() {
-  const configuredOrigins = process.env.CLIENT_URL?.split(",")
-    .map((url) => url.trim())
-    .filter(Boolean);
+  const configuredOrigins = getConfiguredClientOrigins();
 
   const defaults = ["http://127.0.0.1:5173", "http://localhost:5173"];
 
@@ -25,6 +29,24 @@ export function getAllowedOrigins() {
   }
 
   return [...new Set([...(configuredOrigins || []), ...defaults])];
+}
+
+export function getPrimaryClientUrl() {
+  const [configuredOrigin] = getConfiguredClientOrigins();
+
+  if (configuredOrigin) {
+    return configuredOrigin;
+  }
+
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+
+  if (process.env.RAILWAY_PUBLIC_DOMAIN) {
+    return `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
+  }
+
+  return "http://127.0.0.1:5173";
 }
 
 export function getAdminEmail() {

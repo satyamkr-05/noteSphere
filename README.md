@@ -15,6 +15,7 @@ NoteSphere is a full-stack note sharing web application where users can sign up,
 ## Features
 
 - User signup and login
+- Forgot password and secure password reset links
 - Protected user dashboard
 - Note upload with file validation
 - Explore page with search and pagination
@@ -54,6 +55,11 @@ Create a `.env` file in the project root using `.env.example` as a template.
 - `JWT_SECRET`
 - `ADMIN_EMAIL`
 - `ADMIN_PASSWORD`
+- `MAIL_FROM`
+- `SMTP_HOST`
+- `SMTP_PORT`
+- `SMTP_USER`
+- `SMTP_PASS`
 
 ### Common Local Example
 
@@ -61,12 +67,19 @@ Create a `.env` file in the project root using `.env.example` as a template.
 PORT=5000
 MONGODB_URI=mongodb://127.0.0.1:27017/notesphere
 JWT_SECRET=replace_with_a_long_random_secret
+RESET_PASSWORD_TTL_MINUTES=30
 ADMIN_EMAIL=admin@example.com
 ADMIN_PASSWORD=replace_with_a_strong_admin_password
 ADMIN_NAME=NoteSphere Admin
 CLIENT_URL=http://127.0.0.1:5173,http://localhost:5173
 VITE_API_URL=http://127.0.0.1:5000/api
 UPLOAD_DIR=C:\notesphere\uploads
+MAIL_FROM=NoteSphere <no-reply@example.com>
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your_smtp_username
+SMTP_PASS=your_smtp_password
 ```
 
 ## Getting Started
@@ -125,6 +138,8 @@ npm start
 
 - `POST /api/auth/signup`
 - `POST /api/auth/login`
+- `POST /api/auth/forgot-password`
+- `POST /api/auth/reset-password/:token`
 - `GET /api/auth/me`
 
 #### Notes

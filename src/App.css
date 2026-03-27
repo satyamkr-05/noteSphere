@@ -1188,6 +1188,33 @@ body.dark-theme .auth-tab.active {
   animation: fadeUp 0.35s ease;
 }
 
+.auth-form__helper-link {
+  margin-top: 0.7rem;
+}
+
+.auth-feedback {
+  margin-top: 1rem;
+  padding: 0.95rem 1rem;
+  border-radius: 20px;
+  border: 1px solid rgba(91, 124, 255, 0.18);
+  background: rgba(91, 124, 255, 0.08);
+  color: var(--text-soft);
+}
+
+.auth-feedback strong {
+  color: var(--text);
+}
+
+.auth-feedback code {
+  word-break: break-all;
+}
+
+body.dark-theme .auth-feedback {
+  background: rgba(138, 160, 255, 0.12);
+  border-color: rgba(138, 160, 255, 0.24);
+  color: #d7e2ff;
+}
+
 .admin-info-card {
   padding: 1.1rem 1.2rem;
   border-radius: 24px;

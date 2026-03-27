@@ -13,6 +13,8 @@ import ExplorePage from "./pages/ExplorePage";
 import UploadPage from "./pages/UploadPage";
 import AuthPage from "./pages/AuthPage";
 import DashboardPage from "./pages/DashboardPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import { AUTH_EXPIRED_EVENT } from "./services/api";
 
 const THEME_KEY = "notesphere-theme";
@@ -38,6 +40,8 @@ function AppContent({ isDark, onToggleTheme, reloadKey, showToast, triggerReload
         <Route path="/" element={<HomePage reloadKey={reloadKey} showToast={showToast} />} />
         <Route path="/explore" element={<ExplorePage onNotesChanged={triggerReload} showToast={showToast} />} />
         <Route path="/auth" element={<AuthPage showToast={showToast} />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage showToast={showToast} />} />
+        <Route path="/reset-password/:token" element={<ResetPasswordPage showToast={showToast} />} />
         <Route path="/admin-login" element={<AdminLoginPage showToast={showToast} />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/upload" element={<UploadPage onNotesChanged={triggerReload} showToast={showToast} />} />
