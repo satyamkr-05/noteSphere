@@ -1,17 +1,32 @@
-# NoteSphere Full-Stack Setup
+# NoteSphere
 
-This project now has:
+NoteSphere is a full-stack note sharing web application where users can sign up, upload study notes, explore public resources, preview files, and download protected content. It includes a dedicated admin panel for managing notes and user accounts.
 
-- React + Vite frontend
-- Node.js + Express backend
-- MongoDB database
+## Tech Stack
+
+- React
+- Vite
+- Node.js
+- Express
+- MongoDB
 - JWT authentication
-- Protected note management routes
-- File uploads for note attachments
+- Multer file uploads
+
+## Features
+
+- User signup and login
+- Protected user dashboard
+- Note upload with file validation
+- Explore page with search and pagination
+- Protected preview and download flow
+- Download count tracking
+- Admin login and admin-only panel
+- User and note management tools
 
 ## Project Structure
 
 ```text
+api/
 backend/
   src/
     config/
@@ -21,6 +36,7 @@ backend/
     routes/
     utils/
   uploads/
+shared/
 src/
   components/
   context/
@@ -28,42 +44,48 @@ src/
   services/
 ```
 
-## 1. Create Environment File
+## Environment Variables
 
-Create a `.env` file in the project root and copy the values from `.env.example`.
+Create a `.env` file in the project root using `.env.example` as a template.
 
-Example:
+### Required
+
+- `MONGODB_URI`
+- `JWT_SECRET`
+- `ADMIN_EMAIL`
+- `ADMIN_PASSWORD`
+
+### Common Local Example
 
 ```env
 PORT=5000
 MONGODB_URI=mongodb://127.0.0.1:27017/notesphere
 JWT_SECRET=replace_with_a_long_random_secret
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=replace_with_a_strong_admin_password
+ADMIN_NAME=NoteSphere Admin
 CLIENT_URL=http://127.0.0.1:5173,http://localhost:5173
 VITE_API_URL=http://127.0.0.1:5000/api
 UPLOAD_DIR=C:\notesphere\uploads
 ```
 
-## 2. Start MongoDB
+## Getting Started
 
-Make sure MongoDB is running locally, or replace `MONGODB_URI` with your MongoDB Atlas connection string.
-
-Local example:
-
-1. Install MongoDB if needed
-2. Start the MongoDB service
-3. Confirm it is listening on `mongodb://127.0.0.1:27017`
-
-## 3. Install Dependencies
-
-From the project root:
+### 1. Install dependencies
 
 ```bash
 npm install
 ```
 
-## 4. Run the Full Stack
+### 2. Configure environment variables
 
-From the project root:
+Copy `.env.example` to `.env` and replace the placeholder values with your own settings.
+
+### 3. Start MongoDB
+
+Use a local MongoDB server or a MongoDB Atlas connection string.
+
+### 4. Run the project
 
 ```bash
 npm run dev
@@ -71,86 +93,107 @@ npm run dev
 
 This starts:
 
-- Express API on `http://127.0.0.1:5000`
-- Vite frontend on `http://127.0.0.1:5173`
-
-## 5. Use the App
-
-1. Open `http://127.0.0.1:5173`
-2. Go to `Login`
-3. Create a new account
-4. Open `Upload Notes`
-5. Upload a note file
-6. Go to `Explore` and download/search notes
+- frontend: `http://127.0.0.1:5173`
+- backend: `http://127.0.0.1:5000`
 
 ## Available Scripts
 
 ```bash
-npm run client   # start Vite only
-npm run server   # start Express API only
-npm run dev      # start both client and server
-npm run build    # production frontend build
-npm run preview  # preview built frontend
+npm run client
+npm run server
+npm run dev
+npm run build
+npm run preview
+npm start
 ```
 
-## Backend API Overview
+## Main Routes
 
-### Auth
+### Frontend
+
+- `/`
+- `/auth`
+- `/upload`
+- `/dashboard`
+- `/explore`
+- `/admin-login`
+- `/admin`
+
+### Backend API
+
+#### Auth
 
 - `POST /api/auth/signup`
 - `POST /api/auth/login`
 - `GET /api/auth/me`
 
-### Notes
+#### Notes
 
 - `GET /api/notes`
+- `GET /api/notes/stats`
 - `GET /api/notes/trending`
 - `GET /api/notes/mine`
 - `GET /api/notes/:id`
+- `GET /api/notes/:id/file`
 - `GET /api/notes/:id/download`
 - `POST /api/notes`
 - `PUT /api/notes/:id`
 - `DELETE /api/notes/:id`
 
-## Authentication Flow
+#### Admin
 
-- Signup/login returns a JWT token
-- The frontend stores the token in local storage
-- Axios sends the token in the `Authorization` header
-- Protected backend routes use JWT middleware
-- The `/upload` page is protected on the frontend
+- `POST /api/admin/login`
+- `GET /api/admin/notes`
+- `PUT /api/admin/notes/:id`
+- `DELETE /api/admin/notes/:id`
+- `GET /api/admin/users`
+- `DELETE /api/admin/users/:id`
 
-## Notes
+## Upload Rules
 
-- Uploaded files are stored in `backend/uploads`
-- Note metadata is stored in MongoDB
-- Downloads increment the note's download counter
-- Title limit: 100 characters
-- Subject limit: 60 characters
-- Description limit: 500 characters
-- Upload limit: 1 file per note, up to 10 MB
-- Public, dashboard, and admin note lists are paginated for better scaling
-- Note and user search now use MongoDB text indexes
-- Set `UPLOAD_DIR` in production so uploads live in a persistent folder instead of ephemeral storage
+- Maximum file size: `10 MB`
+- Allowed file types: `PDF, DOC, DOCX, TXT, PPT, PPTX, JPG, PNG`
+- Title limit: `100` characters
+- Subject limit: `60` characters
+- Description limit: `500` characters
 
-## Admin Access
+## Production Notes
 
-- The app now supports a dedicated admin login route at `/admin-login`
-- The admin panel route is `/admin`
-- The backend provisions the admin account automatically from `.env`
-- Required admin environment values:
+- Never commit `.env`
+- Keep `JWT_SECRET`, database credentials, and admin password private
+- Set `UPLOAD_DIR` to a persistent directory in production
+- On Vercel, default upload storage can be ephemeral unless `UPLOAD_DIR` is configured externally
+- Use a production `CLIENT_URL` and `VITE_API_URL`
 
-```env
-ADMIN_EMAIL=your-admin-email@example.com
-ADMIN_PASSWORD=your-secure-admin-password
-ADMIN_NAME=Your Name
-```
+## Safe GitHub Upload Guide
 
-- Public signup cannot use the reserved admin email
-- Admin capabilities include:
-  - review and filter all notes
-  - edit note metadata and status
-  - approve or reject notes
-  - delete notes
-  - list user accounts
-  - delete user accounts and their uploaded notes
+### Safe to commit
+
+- application source code
+- `package.json` and `package-lock.json`
+- `.gitignore`
+- `.env.example`
+- docs like `README.md`
+- config files that do not contain secrets
+
+### Do not commit
+
+- `.env`
+- API keys
+- JWT secrets
+- database passwords
+- admin passwords
+- `node_modules/`
+- `dist/`
+- log files
+- real uploaded user files
+
+## Admin Notes
+
+- The reserved admin email cannot be used in public signup
+- The backend provisions the admin account from environment variables
+- Admin users can edit and delete notes, and delete user accounts
+
+## License
+
+This project is for learning and personal project use unless you choose to add a different license.
