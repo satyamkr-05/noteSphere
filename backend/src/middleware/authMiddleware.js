@@ -31,6 +31,14 @@ export const protect = asyncHandler(async (req, res, next) => {
     throw new AppError("User not found for this token.", 401);
   }
 
+  if (user.passwordChangedAt) {
+    const passwordChangedAtSeconds = Math.floor(new Date(user.passwordChangedAt).getTime() / 1000);
+
+    if (decoded.iat && decoded.iat < passwordChangedAtSeconds) {
+      throw new AppError("Your session has expired. Please log in again.", 401);
+    }
+  }
+
   user.isAdmin = isAdminEmail(user.email);
   req.user = user;
   next();

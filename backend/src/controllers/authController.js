@@ -203,3 +203,18 @@ export const resetPassword = asyncHandler(async (req, res) => {
     message: "Password reset successful. You can now log in with your new password."
   });
 });
+
+export const validateResetToken = asyncHandler(async (req, res) => {
+  const hashedToken = crypto.createHash("sha256").update(req.params.token || "").digest("hex");
+  const user = await User.findOne({
+    passwordResetToken: hashedToken,
+    passwordResetExpiresAt: { $gt: new Date() }
+  }).select("_id");
+
+  if (!user) {
+    res.status(400);
+    throw new Error("This password reset link is invalid or has expired.");
+  }
+
+  res.json({ valid: true });
+});

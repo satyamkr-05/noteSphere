@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import api, { getErrorMessage } from "../services/api";
 
@@ -10,6 +10,43 @@ export default function ResetPasswordPage({ showToast }) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
+  const [isValidatingToken, setIsValidatingToken] = useState(true);
+  const [isTokenValid, setIsTokenValid] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function validateToken() {
+      if (!token) {
+        setIsValidatingToken(false);
+        setIsTokenValid(false);
+        return;
+      }
+
+      try {
+        await api.get(`/auth/reset-password/${token}/validate`);
+
+        if (isMounted) {
+          setIsTokenValid(true);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setIsTokenValid(false);
+          showToast(getErrorMessage(error, "This reset link is invalid or expired."), "error");
+        }
+      } finally {
+        if (isMounted) {
+          setIsValidatingToken(false);
+        }
+      }
+    }
+
+    validateToken();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [showToast, token]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -40,7 +77,9 @@ export default function ResetPasswordPage({ showToast }) {
           </div>
 
           <div className="auth-panel">
-            {token ? (
+            {isValidatingToken ? (
+              <div className="page-status glass-card">Checking your reset link...</div>
+            ) : token && isTokenValid ? (
               <form className="auth-form active" onSubmit={handleSubmit}>
                 <div className="form-group">
                   <label htmlFor="resetPassword">New Password</label>

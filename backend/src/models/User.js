@@ -28,6 +28,10 @@ const userSchema = new mongoose.Schema(
     passwordResetExpiresAt: {
       type: Date,
       select: false
+    },
+    passwordChangedAt: {
+      type: Date,
+      default: Date.now
     }
   },
   {
@@ -46,6 +50,7 @@ userSchema.pre("save", async function hashPassword(next) {
 
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
+  this.passwordChangedAt = new Date(Date.now() - 1000);
   next();
 });
 
