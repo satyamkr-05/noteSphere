@@ -36,11 +36,16 @@ Add a persistent volume and mount it to:
 
 ## 2. Railway Build and Start Commands
 
-Use:
+Railway reads the included `railway.json`, so the deploy settings are already defined in code.
+
+Current config:
 
 ```text
-Build command: npm install && npm run build
+Builder: Railpack
+Build command: npm run build
 Start command: npm start
+Healthcheck: /api/health
+Required volume mount: /data/notesphere-uploads
 ```
 
 The frontend production build is created in `dist/`, and the backend now serves that build automatically.
