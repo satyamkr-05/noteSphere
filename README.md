@@ -56,6 +56,7 @@ Create a `.env` file in the project root using `.env.example` as a template.
 - `ADMIN_EMAIL`
 - `ADMIN_PASSWORD`
 - `MAIL_FROM`
+- `RESEND_API_KEY`
 - `SMTP_HOST`
 - `SMTP_PORT`
 - `SMTP_USER`
@@ -75,6 +76,7 @@ CLIENT_URL=http://127.0.0.1:5173,http://localhost:5173
 VITE_API_URL=http://127.0.0.1:5000/api
 UPLOAD_DIR=C:\notesphere\uploads
 MAIL_FROM=NoteSphere <no-reply@example.com>
+RESEND_API_KEY=re_xxxxxxxxx
 SMTP_HOST=smtp.example.com
 SMTP_PORT=587
 SMTP_SECURE=false
@@ -176,6 +178,7 @@ npm start
 
 - Never commit `.env`
 - Keep `JWT_SECRET`, database credentials, and admin password private
+- Prefer an email API like Resend in production on Railway trial/hobby plans, because outbound SMTP can be restricted
 - Set `UPLOAD_DIR` to a persistent directory in production
 - On Vercel, default upload storage can be ephemeral unless `UPLOAD_DIR` is configured externally
 - Use a production `CLIENT_URL` and `VITE_API_URL`

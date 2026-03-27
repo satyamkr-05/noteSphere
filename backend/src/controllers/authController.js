@@ -136,7 +136,7 @@ export const requestPasswordReset = asyncHandler(async (req, res) => {
       user.passwordResetExpiresAt = undefined;
       await user.save();
       res.status(503);
-      throw new Error("Password reset email is not configured yet. Add SMTP settings to the environment variables.");
+      throw new Error("Password reset email is not configured yet. Add your email provider settings to the environment variables.");
     }
 
     res.json({
