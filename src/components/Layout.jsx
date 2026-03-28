@@ -58,7 +58,7 @@ export default function Layout({ children, isDark, onLogout, onToggleTheme, show
             <strong>{user?.name || "Profile"}</strong>
             <small>{user?.email}</small>
           </span>
-          <i className={`fa-solid ${profileMenuOpen ? "fa-chevron-up" : "fa-chevron-down"}`}></i>
+          <i className={`profile-trigger__chevron fa-solid ${profileMenuOpen ? "fa-chevron-up" : "fa-chevron-down"}`}></i>
         </button>
 
         <div className="profile-dropdown glass-card" role="menu">
