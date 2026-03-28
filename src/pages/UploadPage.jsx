@@ -178,7 +178,7 @@ export default function UploadPage({ onNotesChanged, showToast }) {
         <div className="split-layout">
           <div className="split-layout__intro reveal">
             <span className="eyebrow">Upload Notes</span>
-            <h2>Upload new notes and edit your own library from one place</h2>
+            <h2>Upload or edit notes</h2>
             <p>Upload a new note or update one of your existing notes.</p>
 
             <div className="info-stack">
@@ -304,7 +304,7 @@ export default function UploadPage({ onNotesChanged, showToast }) {
         <section className="section section--compact">
           <div className="section-heading reveal">
             <span className="eyebrow">My Uploads</span>
-            <h2>Edit your own uploaded notes</h2>
+            <h2>Your uploaded notes</h2>
           </div>
 
           <div className="notes-grid notes-grid--compact">

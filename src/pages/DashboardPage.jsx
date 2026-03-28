@@ -64,7 +64,7 @@ export default function DashboardPage({ onNotesChanged, showToast }) {
         <div className="split-layout">
           <div className="split-layout__intro reveal">
             <span className="eyebrow">Dashboard</span>
-            <h2>Review your uploaded notes in one clean space</h2>
+            <h2>Your notes</h2>
             <p>Preview your files, track note status, and delete uploads when needed.</p>
 
             <div className="info-stack">

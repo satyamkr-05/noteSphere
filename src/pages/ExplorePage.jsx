@@ -144,7 +144,7 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
       <div className="container">
         <div className="section-heading reveal">
           <span className="eyebrow">Explore Notes</span>
-          <h2>Search and download helpful notes in seconds</h2>
+          <h2>Find notes fast</h2>
           <p>Find the notes you need quickly and easily.</p>
         </div>
 

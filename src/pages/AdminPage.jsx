@@ -400,8 +400,8 @@ export default function AdminPage({ onNotesChanged, showToast }) {
               <article className="info-card glass-card">
                 <i className="fa-solid fa-users-gear"></i>
                 <div>
-                  <h3>All-in-one control</h3>
-                  <p>Handle note review, editing, deletion, and account cleanup from one place.</p>
+                  <h3>Admin tools</h3>
+                  <p>Manage notes and accounts.</p>
                 </div>
               </article>
             </div>
@@ -446,8 +446,8 @@ export default function AdminPage({ onNotesChanged, showToast }) {
               <h2>{editingNoteId ? "Edit selected note" : "Choose a note to manage"}</h2>
               <p>
                 {editingNoteId
-                  ? "Update the note metadata and save the changes."
-                  : "Use the controls below to select a note for editing."}
+                  ? "Edit note details here."
+                  : "Select a note to edit."}
               </p>
             </div>
 
@@ -529,8 +529,8 @@ export default function AdminPage({ onNotesChanged, showToast }) {
         <section className="section section--compact">
           <div className="section-heading reveal">
             <span className="eyebrow">Manage Notes</span>
-            <h2>Review every uploaded resource</h2>
-            <p>All uploads are published directly, so no admin approval is required.</p>
+            <h2>All uploaded notes</h2>
+            <p>View and manage uploaded notes.</p>
           </div>
 
           <div className="explore-toolbar glass-card reveal">
@@ -613,8 +613,8 @@ export default function AdminPage({ onNotesChanged, showToast }) {
         <section className="section section--compact">
           <div className="section-heading reveal">
             <span className="eyebrow">Feedback Inbox</span>
-            <h2>Queries, bugs, and feature requests</h2>
-            <p>Review user messages from the homepage feedback form in one place.</p>
+            <h2>User messages</h2>
+            <p>View user queries and feedback.</p>
           </div>
 
           <div className="explore-toolbar glass-card reveal">
@@ -715,18 +715,15 @@ export default function AdminPage({ onNotesChanged, showToast }) {
             <div className="split-layout admin-layout">
               <div className="split-layout__intro reveal">
                 <span className="eyebrow">Sub Admins</span>
-                <h2>Create and manage sub admin accounts</h2>
-                <p>
-                  Sub admins can use the admin panel like regular admins, but they cannot replace
-                  or delete the main admin account.
-                </p>
+                <h2>Manage sub admins</h2>
+                <p>Sub admins can use admin tools. Main admin stays protected.</p>
 
                 <div className="info-stack">
                   <article className="info-card glass-card">
                     <i className="fa-solid fa-user-shield"></i>
                     <div>
-                      <h3>Main admin controls this list</h3>
-                      <p>Only the main admin can create or remove sub admin accounts.</p>
+                      <h3>Main admin access</h3>
+                      <p>Only the main admin can add or remove sub admins.</p>
                     </div>
                   </article>
                 </div>
@@ -736,7 +733,7 @@ export default function AdminPage({ onNotesChanged, showToast }) {
                 <div className="section-heading dashboard-editor__heading">
                   <span className="eyebrow">Create Sub Admin</span>
                   <h2>Add another admin account</h2>
-                  <p>Create a new sub admin who can help manage notes, users, and feedback.</p>
+                  <p>Add a sub admin account.</p>
                 </div>
 
                 <div className="form-group">
