@@ -116,7 +116,7 @@ export const requestPasswordReset = asyncHandler(async (req, res) => {
     "+passwordResetToken +passwordResetExpiresAt"
   );
   const successMessage =
-    "If an account with that email exists, a password reset link has been sent.";
+    "If your email is registered, a reset link will arrive shortly.";
 
   if (!user) {
     res.json({ message: successMessage });
