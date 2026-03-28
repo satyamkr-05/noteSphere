@@ -247,16 +247,52 @@ body.dark-theme .logo {
   box-shadow: 0 18px 34px rgba(0, 0, 0, 0.28);
 }
 
-.logo__image {
-  display: block;
-  height: 3.15rem;
-  width: auto;
-  object-fit: contain;
-  filter: drop-shadow(0 10px 20px rgba(96, 80, 214, 0.15));
+.logo__text {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0;
+  line-height: 1;
 }
 
-.logo--footer .logo__image {
-  height: 2.85rem;
+.logo__text-note {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1.52rem;
+  font-weight: 700;
+  letter-spacing: -0.08em;
+  color: #23222d;
+  position: relative;
+  z-index: 1;
+}
+
+body.dark-theme .logo__text-note {
+  color: #f5f7ff;
+}
+
+.logo__text-sphere {
+  margin-left: -0.02rem;
+  font-family: "Great Vibes", cursive;
+  font-size: 2.45rem;
+  font-weight: 400;
+  line-height: 0.68;
+  letter-spacing: 0;
+  background: linear-gradient(90deg, #cc1495 0%, #7e19d9 54%, #2a66ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 10px 24px rgba(110, 92, 235, 0.18);
+  transform: translateY(0.14rem);
+}
+
+body.dark-theme .logo__text-sphere {
+  text-shadow: 0 10px 26px rgba(76, 119, 255, 0.28);
+}
+
+.logo--footer .logo__text-note {
+  font-size: 1.36rem;
+}
+
+.logo--footer .logo__text-sphere {
+  font-size: 2.12rem;
 }
 
 .logo--footer {
@@ -1790,8 +1826,13 @@ body.dark-theme .admin-select {
     padding: 0.22rem 0.45rem;
   }
 
-  .logo__image {
-    height: 2.55rem;
+  .logo__text-note {
+    font-size: 1.08rem;
+  }
+
+  .logo__text-sphere {
+    font-size: 1.95rem;
+    transform: translateY(0.1rem);
   }
 
   .nav-toggle {
