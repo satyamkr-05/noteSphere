@@ -103,6 +103,17 @@ body.dark-theme select {
   background: rgba(255, 255, 255, 0.04);
 }
 
+body.dark-theme select {
+  color: #f2f6ff;
+  border-color: rgba(138, 160, 255, 0.18);
+  background: rgba(12, 23, 44, 0.92);
+}
+
+body.dark-theme select option {
+  color: #f2f6ff;
+  background: #0f1930;
+}
+
 input:focus,
 textarea:focus,
 select:focus {
