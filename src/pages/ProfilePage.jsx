@@ -35,9 +35,11 @@ export default function ProfilePage({ showToast }) {
   const [previewNote, setPreviewNote] = useState(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isRemovingAvatar, setIsRemovingAvatar] = useState(false);
+  const [isAvatarMenuOpen, setIsAvatarMenuOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const fileInputRef = useRef(null);
+  const avatarMenuRef = useRef(null);
 
   useReveal([notes.length, currentPage]);
 
@@ -48,6 +50,17 @@ export default function ProfilePage({ showToast }) {
   useEffect(() => {
     setNameDraft(profileUser?.name || "");
   }, [profileUser?.name]);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (!avatarMenuRef.current?.contains(event.target)) {
+        setIsAvatarMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   async function loadProfile(pageToLoad = currentPage) {
     try {
@@ -91,6 +104,7 @@ export default function ProfilePage({ showToast }) {
 
     try {
       setIsUploadingAvatar(true);
+      setIsAvatarMenuOpen(false);
       const response = await api.put("/users/me", payload);
       setProfileUser(response.data.user);
       updateCurrentUser(response.data.user);
@@ -110,6 +124,7 @@ export default function ProfilePage({ showToast }) {
 
     try {
       setIsRemovingAvatar(true);
+      setIsAvatarMenuOpen(false);
       const payload = new FormData();
       payload.append("removeAvatar", "true");
       const response = await api.put("/users/me", payload);
@@ -154,21 +169,63 @@ export default function ProfilePage({ showToast }) {
       <div className="container">
         <div className="profile-grid">
           <aside className="profile-card glass-card reveal is-visible">
-            <div className="profile-card__avatar">
-              {profileUser?.avatarUrl ? (
-                <img src={profileUser.avatarUrl} alt={profileUser.name} className="profile-card__avatar-image" />
-              ) : (
-                <span className="profile-card__avatar-fallback">{getInitials(profileUser?.name)}</span>
-              )}
+            <div className="profile-card__avatar-wrap" ref={avatarMenuRef}>
+              <div className="profile-card__avatar">
+                {profileUser?.avatarUrl ? (
+                  <img src={profileUser.avatarUrl} alt={profileUser.name} className="profile-card__avatar-image" />
+                ) : (
+                  <span className="profile-card__avatar-fallback">{getInitials(profileUser?.name)}</span>
+                )}
+              </div>
+
+              <button
+                type="button"
+                className="profile-card__avatar-trigger"
+                onClick={() => setIsAvatarMenuOpen((current) => !current)}
+                disabled={isUploadingAvatar || isRemovingAvatar}
+                aria-label="Profile picture options"
+                aria-expanded={isAvatarMenuOpen}
+                title="Profile picture options"
+              >
+                <i className={`fa-solid ${isUploadingAvatar ? "fa-spinner fa-spin" : "fa-pen"}`}></i>
+              </button>
+
+              <div className={`profile-card__avatar-menu${isAvatarMenuOpen ? " is-open" : ""}`}>
+                <button
+                  type="button"
+                  className="profile-card__avatar-menu-item"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingAvatar || isRemovingAvatar || isSavingProfile}
+                >
+                  <i className="fa-regular fa-image"></i>
+                  <span>{isUploadingAvatar ? "Uploading..." : "Upload Picture"}</span>
+                </button>
+                {profileUser?.avatarUrl ? (
+                  <button
+                    type="button"
+                    className="profile-card__avatar-menu-item profile-card__avatar-menu-item--danger"
+                    onClick={handleRemoveAvatar}
+                    disabled={isUploadingAvatar || isRemovingAvatar || isSavingProfile}
+                  >
+                    <i className={`fa-solid ${isRemovingAvatar ? "fa-spinner fa-spin" : "fa-trash-can"}`}></i>
+                    <span>{isRemovingAvatar ? "Removing..." : "Remove Picture"}</span>
+                  </button>
+                ) : null}
+              </div>
             </div>
 
             <div className="profile-card__copy">
               <span className="eyebrow">My Profile</span>
-              <p className="profile-card__meta-line">
-                <strong>User Name = </strong>
-                <span>{profileUser?.name || "Your profile"}</span>
-              </p>
-              <p>{profileUser?.email}</p>
+              <div className="profile-card__info-list">
+                <div className="profile-card__info-item">
+                  <span className="profile-card__info-label">User Name</span>
+                  <div className="profile-card__info-value">{profileUser?.name || "Your profile"}</div>
+                </div>
+                <div className="profile-card__info-item">
+                  <span className="profile-card__info-label">Email</span>
+                  <div className="profile-card__info-value">{profileUser?.email || "No email found"}</div>
+                </div>
+              </div>
             </div>
 
             <div className="profile-card__actions">
@@ -223,29 +280,6 @@ export default function ProfilePage({ showToast }) {
                 hidden
                 onChange={handleAvatarChange}
               />
-
-              <div className="profile-card__button-group">
-                <button
-                  type="button"
-                  className="btn btn--primary btn--full"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploadingAvatar || isRemovingAvatar || isSavingProfile}
-                >
-                  {isUploadingAvatar ? "Uploading..." : "Upload Profile Picture"}
-                </button>
-                {profileUser?.avatarUrl ? (
-                  <button
-                    type="button"
-                    className="profile-card__icon-button"
-                    onClick={handleRemoveAvatar}
-                    disabled={isUploadingAvatar || isRemovingAvatar || isSavingProfile}
-                    aria-label="Remove profile picture"
-                    title="Remove profile picture"
-                  >
-                    <i className={`fa-solid ${isRemovingAvatar ? "fa-spinner fa-spin" : "fa-trash-can"}`}></i>
-                  </button>
-                ) : null}
-              </div>
             </div>
           </aside>
 
