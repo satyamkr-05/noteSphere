@@ -237,7 +237,7 @@ body.dark-theme .navbar {
 
 .logo__text {
   display: inline-flex;
-  align-items: baseline;
+  align-items: center;
   gap: 0;
   line-height: 1.02;
   overflow: visible;
@@ -259,11 +259,11 @@ body.dark-theme .logo__text-note {
 
 .logo__text-sphere {
   margin-left: 0.08rem;
-  padding: 0.22rem 0.14rem 0.16rem 0.04rem;
+  padding: 0.34rem 0.14rem 0.12rem 0.04rem;
   font-family: "Great Vibes", cursive;
   font-size: 2.45rem;
   font-weight: 400;
-  line-height: 1.02;
+  line-height: 1.08;
   letter-spacing: 0;
   background: linear-gradient(90deg, #cc1495 0%, #7e19d9 54%, #2a66ff 100%);
   -webkit-background-clip: text;
@@ -1821,9 +1821,9 @@ body.dark-theme .admin-select {
 
   .logo__text-sphere {
     font-size: 1.95rem;
-    line-height: 1;
+    line-height: 1.06;
     margin-left: 0.04rem;
-    padding: 0.18rem 0.08rem 0.12rem 0.02rem;
+    padding: 0.26rem 0.08rem 0.1rem 0.02rem;
     transform: translateY(0);
   }
 
