@@ -232,17 +232,35 @@ body.dark-theme .navbar {
   gap: 0;
   min-width: 0;
   white-space: nowrap;
+  padding: 0.35rem 0.65rem;
+  border-radius: 22px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.36));
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  box-shadow: 0 14px 30px rgba(61, 90, 154, 0.12);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+body.dark-theme .logo {
+  background: linear-gradient(135deg, rgba(15, 27, 52, 0.92), rgba(18, 31, 59, 0.72));
+  border-color: rgba(138, 160, 255, 0.18);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.28);
 }
 
 .logo__image {
   display: block;
-  height: 3rem;
+  height: 3.15rem;
   width: auto;
   object-fit: contain;
+  filter: drop-shadow(0 10px 20px rgba(96, 80, 214, 0.15));
 }
 
 .logo--footer .logo__image {
-  height: 2.7rem;
+  height: 2.85rem;
+}
+
+.logo--footer {
+  padding-inline: 0.55rem;
 }
 
 .nav-toggle {
@@ -1769,10 +1787,11 @@ body.dark-theme .admin-select {
   .logo {
     min-width: 0;
     justify-self: start;
+    padding: 0.22rem 0.45rem;
   }
 
   .logo__image {
-    height: 2.4rem;
+    height: 2.55rem;
   }
 
   .nav-toggle {
