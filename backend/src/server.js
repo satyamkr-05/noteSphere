@@ -9,6 +9,15 @@ dotenv.config();
 const port = process.env.PORT || 5000;
 let server;
 
+function shutdownServer(exitCode = 0) {
+  if (server) {
+    server.close(() => process.exit(exitCode));
+    return;
+  }
+
+  process.exit(exitCode);
+}
+
 process.on("uncaughtException", (error) => {
   console.error("Uncaught exception:", error);
   process.exit(1);
@@ -16,13 +25,17 @@ process.on("uncaughtException", (error) => {
 
 process.on("unhandledRejection", (error) => {
   console.error("Unhandled rejection:", error);
+  shutdownServer(1);
+});
 
-  if (server) {
-    server.close(() => process.exit(1));
-    return;
-  }
+process.on("SIGTERM", () => {
+  console.log("SIGTERM received. Closing server gracefully...");
+  shutdownServer(0);
+});
 
-  process.exit(1);
+process.on("SIGINT", () => {
+  console.log("SIGINT received. Closing server gracefully...");
+  shutdownServer(0);
 });
 
 async function startServer() {

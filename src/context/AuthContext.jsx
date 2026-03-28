@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import api, { AUTH_EXPIRED_EVENT } from "../services/api";
+import { getStorageItem, removeStorageItem, setStorageItem } from "../utils/storage";
 
 const AuthContext = createContext(null);
 
@@ -7,7 +8,7 @@ const TOKEN_KEY = "notesphere-token";
 const USER_KEY = "notesphere-user";
 
 function getStoredUser() {
-  const storedUser = localStorage.getItem(USER_KEY);
+  const storedUser = getStorageItem(USER_KEY);
 
   if (!storedUser) {
     return null;
@@ -16,13 +17,13 @@ function getStoredUser() {
   try {
     return JSON.parse(storedUser);
   } catch {
-    localStorage.removeItem(USER_KEY);
+    removeStorageItem(USER_KEY);
     return null;
   }
 }
 
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY) || "");
+  const [token, setToken] = useState(() => getStorageItem(TOKEN_KEY) || "");
   const [user, setUser] = useState(getStoredUser);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
 
@@ -30,11 +31,11 @@ export function AuthProvider({ children }) {
     setUser(nextUser);
 
     if (nextUser) {
-      localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
+      setStorageItem(USER_KEY, JSON.stringify(nextUser));
       return;
     }
 
-    localStorage.removeItem(USER_KEY);
+    removeStorageItem(USER_KEY);
   }
 
   useEffect(() => {
@@ -48,8 +49,8 @@ export function AuthProvider({ children }) {
         const response = await api.get("/auth/me");
         persistUser(response.data.user);
       } catch {
-        localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem(USER_KEY);
+        removeStorageItem(TOKEN_KEY);
+        removeStorageItem(USER_KEY);
         setToken("");
         setUser(null);
       } finally {
@@ -62,8 +63,8 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     function handleAuthExpired() {
-      localStorage.removeItem(TOKEN_KEY);
-      localStorage.removeItem(USER_KEY);
+      removeStorageItem(TOKEN_KEY);
+      removeStorageItem(USER_KEY);
       setToken("");
       setUser(null);
     }
@@ -76,7 +77,7 @@ export function AuthProvider({ children }) {
     const response = await api.post("/auth/signup", payload);
     setToken(response.data.token);
     persistUser(response.data.user);
-    localStorage.setItem(TOKEN_KEY, response.data.token);
+    setStorageItem(TOKEN_KEY, response.data.token);
     return response.data;
   }
 
@@ -84,7 +85,7 @@ export function AuthProvider({ children }) {
     const response = await api.post("/auth/login", payload);
     setToken(response.data.token);
     persistUser(response.data.user);
-    localStorage.setItem(TOKEN_KEY, response.data.token);
+    setStorageItem(TOKEN_KEY, response.data.token);
     return response.data;
   }
 
@@ -92,7 +93,7 @@ export function AuthProvider({ children }) {
     const response = await api.post("/admin/login", payload);
     setToken(response.data.token);
     persistUser(response.data.user);
-    localStorage.setItem(TOKEN_KEY, response.data.token);
+    setStorageItem(TOKEN_KEY, response.data.token);
     return response.data;
   }
 
@@ -112,8 +113,8 @@ export function AuthProvider({ children }) {
   }
 
   function logout() {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
+    removeStorageItem(TOKEN_KEY);
+    removeStorageItem(USER_KEY);
     setToken("");
     setUser(null);
   }

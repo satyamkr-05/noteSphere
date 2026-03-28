@@ -1408,6 +1408,29 @@ body.dark-theme .content-tag {
   border-radius: 24px;
 }
 
+.app-error-boundary {
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 1.6rem;
+  text-align: center;
+}
+
+.app-error-boundary h2 {
+  margin: 1rem 0 0.65rem;
+}
+
+.app-error-boundary p {
+  color: var(--text-soft);
+}
+
+.app-error-boundary__actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  margin-top: 1.4rem;
+}
+
 .pagination-controls {
   display: flex;
   flex-wrap: wrap;

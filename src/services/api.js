@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getStorageItem } from "../utils/storage";
 
 export const AUTH_EXPIRED_EVENT = "notesphere:auth-expired";
 
@@ -11,9 +12,10 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("notesphere-token");
+  const token = getStorageItem("notesphere-token");
 
   if (token) {
+    config.headers = config.headers || {};
     config.headers.Authorization = `Bearer ${token}`;
   }
 
@@ -23,7 +25,7 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && localStorage.getItem("notesphere-token")) {
+    if (error.response?.status === 401 && getStorageItem("notesphere-token")) {
       window.dispatchEvent(
         new CustomEvent(AUTH_EXPIRED_EVENT, {
           detail: {

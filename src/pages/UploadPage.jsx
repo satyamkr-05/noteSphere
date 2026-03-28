@@ -59,6 +59,9 @@ export default function UploadPage({ onNotesChanged, showToast }) {
       });
       setMyNotes(response.data.notes || []);
       setPagination(response.data.pagination || initialPagination);
+      if (response.data.pagination?.currentPage && response.data.pagination.currentPage !== pageToLoad) {
+        setCurrentPage(response.data.pagination.currentPage);
+      }
     } catch (error) {
       setMyNotes([]);
       setPagination(initialPagination);
@@ -79,10 +82,11 @@ export default function UploadPage({ onNotesChanged, showToast }) {
   function handleFileChange(event) {
     const selectedFile = event.target.files?.[0] || null;
     const fileError = validateNoteFile(selectedFile);
+    const fallbackLabel = editingId ? fileLabel : "Choose a file or drag it here";
 
     if (fileError) {
       setFile(null);
-      setFileLabel(editingId ? fileLabel : "Choose a file or drag it here");
+      setFileLabel(fallbackLabel);
       event.target.value = "";
       showToast(fileError, "error");
       return;

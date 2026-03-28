@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { BrowserRouter, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import "./App.css";
 import AdminRoute from "./components/AdminRoute";
+import ErrorBoundary from "./components/ErrorBoundary";
 import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ToastViewport from "./components/ToastViewport";
@@ -17,6 +18,7 @@ import DashboardPage from "./pages/DashboardPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import { AUTH_EXPIRED_EVENT } from "./services/api";
+import { getStorageItem, setStorageItem } from "./utils/storage";
 
 const THEME_KEY = "notesphere-theme";
 
@@ -70,7 +72,7 @@ export default function App() {
 
   useEffect(() => {
     document.body.classList.toggle("dark-theme", isDark);
-    localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
+    setStorageItem(THEME_KEY, isDark ? "dark" : "light");
   }, [isDark]);
 
   function showToast(message, type = "info") {
@@ -105,13 +107,15 @@ export default function App() {
       </div>
 
       <BrowserRouter>
-        <AppContent
-          isDark={isDark}
-          onToggleTheme={() => setIsDark((current) => !current)}
-          reloadKey={reloadKey}
-          triggerReload={() => setReloadKey((current) => current + 1)}
-          showToast={showToast}
-        />
+        <ErrorBoundary>
+          <AppContent
+            isDark={isDark}
+            onToggleTheme={() => setIsDark((current) => !current)}
+            reloadKey={reloadKey}
+            triggerReload={() => setReloadKey((current) => current + 1)}
+            showToast={showToast}
+          />
+        </ErrorBoundary>
       </BrowserRouter>
 
       <ToastViewport toasts={toasts} />
@@ -120,7 +124,7 @@ export default function App() {
 }
 
 function getInitialTheme() {
-  const savedTheme = localStorage.getItem(THEME_KEY);
-  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const savedTheme = getStorageItem(THEME_KEY);
+  const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false;
   return savedTheme ? savedTheme === "dark" : prefersDark;
 }
