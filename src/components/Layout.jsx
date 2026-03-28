@@ -108,8 +108,14 @@ export default function Layout({ children, isDark, onLogout, onToggleTheme, show
             <i className={`fa-solid ${navOpen ? "fa-xmark" : "fa-bars"}`}></i>
           </button>
 
-          <div className="mobile-header-right" aria-hidden={!isAuthenticated}>
-            {isAuthenticated ? renderProfileMenu({ mobile: true }) : <span className="mobile-header-spacer"></span>}
+          <div className="mobile-header-right">
+            {isAuthenticated ? (
+              renderProfileMenu({ mobile: true })
+            ) : (
+              <NavLink to="/auth" className="mobile-header-login" onClick={closeNav}>
+                Login
+              </NavLink>
+            )}
           </div>
 
           <div className={`nav-menu${navOpen ? " is-open" : ""}`} id="navMenu">
