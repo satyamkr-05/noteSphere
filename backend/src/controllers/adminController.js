@@ -305,23 +305,26 @@ export const getAdminUsers = asyncHandler(async (req, res) => {
     maxLimit: 30
   });
   const { filter, hasSearchQuery } = buildTextSearchFilter(search);
-  const [totalItems, totalAccounts, totalNotes, activeUploaderIds] = await Promise.all([
+  const accountFilter = {
+    ...filter,
+    adminRole: { $in: [ADMIN_ROLES.USER, ADMIN_ROLES.SUB_ADMIN] },
+    email: { $ne: getAdminEmail() }
+  };
+  const [totalItems, totalAccounts, totalNotes, activeUploaderIds, totalSubAdmins] = await Promise.all([
     User.countDocuments({
-      ...filter,
-      adminRole: ADMIN_ROLES.USER,
+      ...accountFilter
+    }),
+    User.countDocuments({
+      adminRole: { $in: [ADMIN_ROLES.USER, ADMIN_ROLES.SUB_ADMIN] },
       email: { $ne: getAdminEmail() }
     }),
-    User.countDocuments({ adminRole: ADMIN_ROLES.USER, email: { $ne: getAdminEmail() } }),
     Note.countDocuments({}),
-    Note.distinct("uploadedBy")
+    Note.distinct("uploadedBy"),
+    User.countDocuments({ adminRole: ADMIN_ROLES.SUB_ADMIN, email: { $ne: getAdminEmail() } })
   ]);
   const pagination = buildPagination(requestedPagination, totalItems);
   const users = await User.find(
-    {
-      ...filter,
-      adminRole: ADMIN_ROLES.USER,
-      email: { $ne: getAdminEmail() }
-    },
+    accountFilter,
     hasSearchQuery ? { score: { $meta: "textScore" } } : {}
   )
     .sort(
@@ -355,7 +358,8 @@ export const getAdminUsers = asyncHandler(async (req, res) => {
     summary: {
       totalAccounts,
       totalNotes,
-      activeUploaders: activeUploaderIds.length
+      activeUploaders: activeUploaderIds.length,
+      totalSubAdmins
     },
     users: users.map((user) => {
       const userId = String(user._id);
@@ -370,6 +374,50 @@ export const getAdminUsers = asyncHandler(async (req, res) => {
       );
     }),
     pagination: serializePagination(pagination)
+  });
+});
+
+export const promoteUserToSubAdmin = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+
+  if (!user) {
+    throw new AppError("User account not found.", 404);
+  }
+
+  if (isMainAdminUser(user)) {
+    throw new AppError("The primary admin account cannot be changed from this section.", 400);
+  }
+
+  if (user.adminRole === ADMIN_ROLES.SUB_ADMIN) {
+    throw new AppError("This account already has sub admin access.", 409);
+  }
+
+  user.adminRole = ADMIN_ROLES.SUB_ADMIN;
+  await user.save();
+
+  res.json({
+    message: "Sub admin access enabled successfully.",
+    user: serializeUser(user)
+  });
+});
+
+export const demoteSubAdminToUser = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+
+  if (!user) {
+    throw new AppError("Sub admin account not found.", 404);
+  }
+
+  if (isMainAdminUser(user) || user.adminRole !== ADMIN_ROLES.SUB_ADMIN) {
+    throw new AppError("Only sub admin accounts can be updated from this section.", 400);
+  }
+
+  user.adminRole = ADMIN_ROLES.USER;
+  await user.save();
+
+  res.json({
+    message: "Sub admin access removed successfully.",
+    user: serializeUser(user)
   });
 });
 

@@ -4,15 +4,6 @@ import PaginationControls from "../components/PaginationControls";
 import { useAuth } from "../context/AuthContext";
 import { useReveal } from "../components/useReveal";
 import api, { getErrorMessage } from "../services/api";
-import { NOTE_LIMITS } from "../../shared/noteLimits.js";
-import { formatCharacterCount, validateNoteForm } from "../utils/noteValidation";
-
-const initialForm = {
-  title: "",
-  subject: "",
-  description: "",
-  featured: false
-};
 
 const initialNotesSummary = {
   totalNotes: 0,
@@ -25,23 +16,14 @@ const initialNotesSummary = {
 const initialUsersSummary = {
   totalAccounts: 0,
   totalNotes: 0,
-  activeUploaders: 0
+  activeUploaders: 0,
+  totalSubAdmins: 0
 };
 
 const initialFeedbackSummary = {
   totalMessages: 0,
   newMessages: 0,
   reviewedMessages: 0
-};
-
-const initialSubAdminSummary = {
-  totalSubAdmins: 0
-};
-
-const initialSubAdminForm = {
-  name: "",
-  email: "",
-  password: ""
 };
 
 const initialPagination = {
@@ -63,38 +45,24 @@ export default function AdminPage({ onNotesChanged, showToast }) {
   const [notes, setNotes] = useState([]);
   const [users, setUsers] = useState([]);
   const [feedback, setFeedback] = useState([]);
-  const [subAdmins, setSubAdmins] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [feedbackSearchQuery, setFeedbackSearchQuery] = useState("");
-  const [subAdminSearchQuery, setSubAdminSearchQuery] = useState("");
   const [isNotesLoading, setIsNotesLoading] = useState(true);
   const [isUsersLoading, setIsUsersLoading] = useState(true);
   const [isFeedbackLoading, setIsFeedbackLoading] = useState(true);
-  const [isSubAdminsLoading, setIsSubAdminsLoading] = useState(true);
-  const [isCreatingSubAdmin, setIsCreatingSubAdmin] = useState(false);
-  const [editingNoteId, setEditingNoteId] = useState("");
-  const [form, setForm] = useState(initialForm);
-  const [subAdminForm, setSubAdminForm] = useState(initialSubAdminForm);
-  const [isSaving, setIsSaving] = useState(false);
   const [previewNote, setPreviewNote] = useState(null);
   const [notesSummary, setNotesSummary] = useState(initialNotesSummary);
   const [usersSummary, setUsersSummary] = useState(initialUsersSummary);
   const [feedbackSummary, setFeedbackSummary] = useState(initialFeedbackSummary);
-  const [subAdminSummary, setSubAdminSummary] = useState(initialSubAdminSummary);
   const [notesPagination, setNotesPagination] = useState(initialPagination);
   const [usersPagination, setUsersPagination] = useState(initialUserPagination);
   const [feedbackPagination, setFeedbackPagination] = useState(initialUserPagination);
-  const [subAdminPagination, setSubAdminPagination] = useState({
-    ...initialPagination,
-    limit: 6
-  });
   const [notesPage, setNotesPage] = useState(1);
   const [usersPage, setUsersPage] = useState(1);
   const [feedbackPage, setFeedbackPage] = useState(1);
-  const [subAdminPage, setSubAdminPage] = useState(1);
 
-  useReveal([notes.length, users.length, feedback.length, subAdmins.length, editingNoteId]);
+  useReveal([notes.length, users.length, feedback.length]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -119,25 +87,6 @@ export default function AdminPage({ onNotesChanged, showToast }) {
 
     return () => window.clearTimeout(timer);
   }, [feedbackSearchQuery, feedbackPage]);
-
-  useEffect(() => {
-    if (!user?.isMainAdmin) {
-      setSubAdmins([]);
-      setSubAdminSummary(initialSubAdminSummary);
-      setSubAdminPagination({
-        ...initialPagination,
-        limit: 6
-      });
-      setIsSubAdminsLoading(false);
-      return;
-    }
-
-    const timer = window.setTimeout(() => {
-      loadSubAdmins(subAdminPage);
-    }, 250);
-
-    return () => window.clearTimeout(timer);
-  }, [subAdminSearchQuery, subAdminPage, user?.isMainAdmin]);
 
   async function loadNotes(pageToLoad = notesPage) {
     try {
@@ -217,76 +166,6 @@ export default function AdminPage({ onNotesChanged, showToast }) {
     }
   }
 
-  async function loadSubAdmins(pageToLoad = subAdminPage) {
-    try {
-      setIsSubAdminsLoading(true);
-      const response = await api.get("/admin/sub-admins", {
-        params: {
-          ...(subAdminSearchQuery ? { search: subAdminSearchQuery } : {}),
-          page: pageToLoad,
-          limit: 6
-        }
-      });
-      setSubAdmins(response.data.subAdmins || []);
-      setSubAdminSummary(response.data.summary || initialSubAdminSummary);
-      setSubAdminPagination(response.data.pagination || { ...initialPagination, limit: 6 });
-      if (response.data.pagination?.currentPage && response.data.pagination.currentPage !== pageToLoad) {
-        setSubAdminPage(response.data.pagination.currentPage);
-      }
-    } catch (error) {
-      setSubAdmins([]);
-      setSubAdminSummary(initialSubAdminSummary);
-      setSubAdminPagination({ ...initialPagination, limit: 6 });
-      showToast(getErrorMessage(error, "Unable to load sub admin accounts."), "error");
-    } finally {
-      setIsSubAdminsLoading(false);
-    }
-  }
-
-  function resetEditor() {
-    setEditingNoteId("");
-    setForm(initialForm);
-  }
-
-  function startEditing(note) {
-    setEditingNoteId(note.id);
-    setForm({
-      title: note.title,
-      subject: note.subject,
-      description: note.description,
-      featured: note.featured
-    });
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  async function handleSaveNote(event) {
-    event.preventDefault();
-
-    const { error, value } = validateNoteForm(form);
-    if (error) {
-      showToast(error, "error");
-      return;
-    }
-
-    try {
-      setIsSaving(true);
-      await api.put(`/admin/notes/${editingNoteId}`, {
-        title: value.title,
-        subject: value.subject,
-        description: value.description,
-        featured: value.featured
-      });
-      showToast("Note updated successfully.", "success");
-      resetEditor();
-      await loadNotes(notesPage);
-      onNotesChanged();
-    } catch (error) {
-      showToast(getErrorMessage(error, "Unable to update this note."), "error");
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
   async function handleDeleteNote(noteId) {
     if (!window.confirm("Delete this note permanently?")) {
       return;
@@ -295,13 +174,38 @@ export default function AdminPage({ onNotesChanged, showToast }) {
     try {
       await api.delete(`/admin/notes/${noteId}`);
       showToast("Note deleted successfully.", "success");
-      if (editingNoteId === noteId) {
-        resetEditor();
-      }
       await Promise.all([loadNotes(notesPage), loadUsers(usersPage)]);
       onNotesChanged();
     } catch (error) {
       showToast(getErrorMessage(error, "Unable to delete this note."), "error");
+    }
+  }
+
+  async function handleCreateSubAdmin(userId) {
+    if (!window.confirm("Give this account sub admin access?")) {
+      return;
+    }
+
+    try {
+      await api.put(`/admin/users/${userId}/promote-sub-admin`);
+      showToast("Sub admin access enabled successfully.", "success");
+      await loadUsers(usersPage);
+    } catch (error) {
+      showToast(getErrorMessage(error, "Unable to enable sub admin access."), "error");
+    }
+  }
+
+  async function handleRemoveSubAdmin(userId) {
+    if (!window.confirm("Remove sub admin access from this account?")) {
+      return;
+    }
+
+    try {
+      await api.put(`/admin/users/${userId}/remove-sub-admin`);
+      showToast("Sub admin access removed successfully.", "success");
+      await loadUsers(usersPage);
+    } catch (error) {
+      showToast(getErrorMessage(error, "Unable to remove sub admin access."), "error");
     }
   }
 
@@ -344,45 +248,15 @@ export default function AdminPage({ onNotesChanged, showToast }) {
     }
   }
 
-  async function handleCreateSubAdmin(event) {
-    event.preventDefault();
-
-    try {
-      setIsCreatingSubAdmin(true);
-      await api.post("/admin/sub-admins", subAdminForm);
-      setSubAdminForm(initialSubAdminForm);
-      showToast("Sub admin created successfully.", "success");
-      await loadSubAdmins(subAdminPage);
-    } catch (error) {
-      showToast(getErrorMessage(error, "Unable to create the sub admin account."), "error");
-    } finally {
-      setIsCreatingSubAdmin(false);
-    }
-  }
-
-  async function handleDeleteSubAdmin(subAdminId) {
-    if (!window.confirm("Remove this sub admin account?")) {
-      return;
-    }
-
-    try {
-      await api.delete(`/admin/sub-admins/${subAdminId}`);
-      showToast("Sub admin removed successfully.", "success");
-      await loadSubAdmins(subAdminPage);
-    } catch (error) {
-      showToast(getErrorMessage(error, "Unable to remove this sub admin."), "error");
-    }
-  }
-
   return (
     <section className="section">
       <div className="container">
         <div className="split-layout admin-layout">
           <div className="split-layout__intro reveal">
             <span className="eyebrow">Admin Panel</span>
-            <h2>Moderate notes and manage platform accounts</h2>
+            <h2>Manage notes, accounts, and user messages</h2>
             <p>
-              Review every upload, edit note details, and manage platform accounts from one place.
+              Review uploads, remove unwanted content, and control account access from one place.
             </p>
 
             <div className="info-stack">
@@ -401,7 +275,7 @@ export default function AdminPage({ onNotesChanged, showToast }) {
                 <i className="fa-solid fa-users-gear"></i>
                 <div>
                   <h3>Admin tools</h3>
-                  <p>Manage notes and accounts.</p>
+                  <p>Manage notes, feedback, and account access.</p>
                 </div>
               </article>
             </div>
@@ -433,104 +307,19 @@ export default function AdminPage({ onNotesChanged, showToast }) {
               </article>
               {user?.isMainAdmin ? (
                 <article className="stat-card glass-card">
-                  <strong>{subAdminSummary.totalSubAdmins}</strong>
+                  <strong>{usersSummary.totalSubAdmins}</strong>
                   <span>Sub Admins</span>
                 </article>
               ) : null}
             </div>
           </div>
-
-          <form className="upload-form glass-card reveal" onSubmit={handleSaveNote}>
-            <div className="section-heading dashboard-editor__heading">
-              <span className="eyebrow">Note Editor</span>
-              <h2>{editingNoteId ? "Edit selected note" : "Choose a note to manage"}</h2>
-              <p>
-                {editingNoteId
-                  ? "Edit note details here."
-                  : "Select a note to edit."}
-              </p>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="adminNoteTitle">Note Title</label>
-              <input
-                type="text"
-                id="adminNoteTitle"
-                value={form.title}
-                onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
-                maxLength={NOTE_LIMITS.titleMaxLength}
-                disabled={!editingNoteId}
-                required
-              />
-              <small className="form-hint">
-                <span>Max {NOTE_LIMITS.titleMaxLength} characters.</span>
-                <span>{formatCharacterCount(form.title, NOTE_LIMITS.titleMaxLength)}</span>
-              </small>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="adminNoteSubject">Subject</label>
-              <input
-                type="text"
-                id="adminNoteSubject"
-                value={form.subject}
-                onChange={(event) => setForm((current) => ({ ...current, subject: event.target.value }))}
-                maxLength={NOTE_LIMITS.subjectMaxLength}
-                disabled={!editingNoteId}
-                required
-              />
-              <small className="form-hint">
-                <span>Max {NOTE_LIMITS.subjectMaxLength} characters.</span>
-                <span>{formatCharacterCount(form.subject, NOTE_LIMITS.subjectMaxLength)}</span>
-              </small>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="adminNoteDescription">Description</label>
-              <textarea
-                id="adminNoteDescription"
-                rows="4"
-                value={form.description}
-                onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
-                maxLength={NOTE_LIMITS.descriptionMaxLength}
-                disabled={!editingNoteId}
-                required
-              ></textarea>
-              <small className="form-hint">
-                <span>Max {NOTE_LIMITS.descriptionMaxLength} characters.</span>
-                <span>{formatCharacterCount(form.description, NOTE_LIMITS.descriptionMaxLength)}</span>
-              </small>
-            </div>
-
-            <div className="form-group checkbox-row">
-              <input
-                id="adminFeatured"
-                type="checkbox"
-                checked={form.featured}
-                onChange={(event) => setForm((current) => ({ ...current, featured: event.target.checked }))}
-                disabled={!editingNoteId}
-              />
-              <label htmlFor="adminFeatured">Featured note</label>
-            </div>
-
-            <div className="form-actions">
-              <button type="submit" className="btn btn--primary btn--full" disabled={!editingNoteId || isSaving}>
-                {isSaving ? "Saving..." : "Save Changes"}
-              </button>
-              {editingNoteId ? (
-                <button type="button" className="btn btn--secondary btn--full" onClick={resetEditor}>
-                  Cancel
-                </button>
-              ) : null}
-            </div>
-          </form>
         </div>
 
         <section className="section section--compact">
           <div className="section-heading reveal">
             <span className="eyebrow">Manage Notes</span>
             <h2>All uploaded notes</h2>
-            <p>View and manage uploaded notes.</p>
+            <p>View notes and remove content that should not stay on the platform.</p>
           </div>
 
           <div className="explore-toolbar glass-card reveal">
@@ -584,9 +373,6 @@ export default function AdminPage({ onNotesChanged, showToast }) {
                   <div className="note-card__buttons">
                     <button type="button" className="btn btn--secondary" onClick={() => setPreviewNote(note)}>
                       Preview
-                    </button>
-                    <button type="button" className="btn btn--secondary" onClick={() => startEditing(note)}>
-                      Edit
                     </button>
                     <button type="button" className="btn btn--primary" onClick={() => handleDeleteNote(note.id)}>
                       Delete
@@ -710,148 +496,13 @@ export default function AdminPage({ onNotesChanged, showToast }) {
           ) : null}
         </section>
 
-        {user?.isMainAdmin ? (
-          <section className="section section--compact">
-            <div className="split-layout admin-layout">
-              <div className="split-layout__intro reveal">
-                <span className="eyebrow">Sub Admins</span>
-                <h2>Manage sub admins</h2>
-                <p>Sub admins can use admin tools. Main admin stays protected.</p>
-
-                <div className="info-stack">
-                  <article className="info-card glass-card">
-                    <i className="fa-solid fa-user-shield"></i>
-                    <div>
-                      <h3>Main admin access</h3>
-                      <p>Only the main admin can add or remove sub admins.</p>
-                    </div>
-                  </article>
-                </div>
-              </div>
-
-              <form className="upload-form glass-card reveal" onSubmit={handleCreateSubAdmin}>
-                <div className="section-heading dashboard-editor__heading">
-                  <span className="eyebrow">Create Sub Admin</span>
-                  <h2>Add another admin account</h2>
-                  <p>Add a sub admin account.</p>
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="subAdminName">Name</label>
-                  <input
-                    id="subAdminName"
-                    type="text"
-                    value={subAdminForm.name}
-                    onChange={(event) => setSubAdminForm((current) => ({ ...current, name: event.target.value }))}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="subAdminEmail">Email</label>
-                  <input
-                    id="subAdminEmail"
-                    type="email"
-                    value={subAdminForm.email}
-                    onChange={(event) => setSubAdminForm((current) => ({ ...current, email: event.target.value }))}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="subAdminPassword">Password</label>
-                  <input
-                    id="subAdminPassword"
-                    type="password"
-                    minLength="6"
-                    value={subAdminForm.password}
-                    onChange={(event) => setSubAdminForm((current) => ({ ...current, password: event.target.value }))}
-                    required
-                  />
-                </div>
-
-                <button type="submit" className="btn btn--primary btn--full" disabled={isCreatingSubAdmin}>
-                  {isCreatingSubAdmin ? "Creating..." : "Create Sub Admin"}
-                </button>
-              </form>
-            </div>
-
-            <div className="explore-toolbar glass-card reveal">
-              <div className="search-field">
-                <i className="fa-solid fa-magnifying-glass"></i>
-                <input
-                  type="text"
-                  placeholder="Search sub admins by name or email"
-                  value={subAdminSearchQuery}
-                  onChange={(event) => {
-                    setSubAdminSearchQuery(event.target.value);
-                    setSubAdminPage(1);
-                  }}
-                />
-              </div>
-
-              <div className="admin-toolbar-actions">
-                <button
-                  type="button"
-                  className="btn btn--secondary"
-                  onClick={() => {
-                    setSubAdminSearchQuery("");
-                    setSubAdminPage(1);
-                  }}
-                >
-                  Clear
-                </button>
-              </div>
-            </div>
-
-            {isSubAdminsLoading ? <div className="page-status glass-card">Loading sub admin accounts...</div> : null}
-
-            <div className="admin-users-grid">
-              {subAdmins.map((account) => (
-                <article key={account.id} className="user-card glass-card reveal is-visible">
-                  <div className="user-card__header">
-                    <div>
-                      <h3>{account.name}</h3>
-                      <p>{account.email}</p>
-                    </div>
-                    <span className="status-badge status-badge--approved">Sub Admin</span>
-                  </div>
-
-                  <div className="user-card__meta">
-                    <span><i className="fa-regular fa-calendar"></i> Joined {formatDate(account.createdAt)}</span>
-                    <span><i className="fa-solid fa-shield-halved"></i> Admin access enabled</span>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="btn btn--primary btn--full"
-                    onClick={() => handleDeleteSubAdmin(account.id)}
-                  >
-                    Remove Sub Admin
-                  </button>
-                </article>
-              ))}
-            </div>
-
-            {!isSubAdminsLoading && subAdmins.length === 0 ? (
-              <p className="empty-state glass-card">No sub admin accounts found.</p>
-            ) : null}
-
-            {!isSubAdminsLoading && subAdmins.length > 0 ? (
-              <PaginationControls
-                pagination={subAdminPagination}
-                onPageChange={setSubAdminPage}
-                itemLabel="sub admins"
-              />
-            ) : null}
-          </section>
-        ) : null}
-
         <section className="section section--compact">
           <div className="section-heading reveal">
             <span className="eyebrow">Accounts</span>
-            <h2>Manage registered users</h2>
-            <p>{usersSummary.totalAccounts} total accounts have been created on the platform.</p>
+            <h2>Manage registered accounts</h2>
+            <p>
+              {usersSummary.totalAccounts} total accounts are available here, including sub admin access for eligible users.
+            </p>
           </div>
 
           <div className="explore-toolbar glass-card reveal">
@@ -892,7 +543,9 @@ export default function AdminPage({ onNotesChanged, showToast }) {
                     <h3>{account.name}</h3>
                     <p>{account.email}</p>
                   </div>
-                  {account.isAdmin ? <span className="status-badge status-badge--approved">Admin</span> : null}
+                  {account.adminRole === "sub_admin" ? (
+                    <span className="status-badge status-badge--approved">Sub Admin</span>
+                  ) : null}
                 </div>
 
                 <div className="user-card__meta">
@@ -915,14 +568,39 @@ export default function AdminPage({ onNotesChanged, showToast }) {
                   )}
                 </div>
 
-                <button
-                  type="button"
-                  className="btn btn--primary btn--full"
-                  onClick={() => handleDeleteUser(account.id)}
-                  disabled={account.isAdmin}
-                >
-                  {account.isAdmin ? "Primary Admin Account" : "Delete Account"}
-                </button>
+                <div className="note-card__actions">
+                  <div className="note-card__buttons">
+                    {user?.isMainAdmin && !account.isAdmin ? (
+                      <button
+                        type="button"
+                        className="btn btn--secondary"
+                        onClick={() => handleCreateSubAdmin(account.id)}
+                      >
+                        Create Sub Admin
+                      </button>
+                    ) : null}
+
+                    {user?.isMainAdmin && account.adminRole === "sub_admin" ? (
+                      <button
+                        type="button"
+                        className="btn btn--secondary"
+                        onClick={() => handleRemoveSubAdmin(account.id)}
+                      >
+                        Remove Sub Admin
+                      </button>
+                    ) : null}
+
+                    {!account.isAdmin ? (
+                      <button
+                        type="button"
+                        className="btn btn--primary"
+                        onClick={() => handleDeleteUser(account.id)}
+                      >
+                        Delete Account
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
               </article>
             ))}
           </div>

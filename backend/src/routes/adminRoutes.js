@@ -2,6 +2,7 @@ import express from "express";
 import {
   approveNote,
   createSubAdmin,
+  demoteSubAdminToUser,
   deleteAdminFeedback,
   deleteAdminNote,
   deleteAdminUser,
@@ -12,6 +13,7 @@ import {
   getAdminUsers,
   loginAdmin,
   markFeedbackReviewed,
+  promoteUserToSubAdmin,
   rejectNote,
   updateAdminNote
 } from "../controllers/adminController.js";
@@ -29,6 +31,8 @@ router.put("/notes/:id/approve", approveNote);
 router.put("/notes/:id/reject", rejectNote);
 router.delete("/notes/:id", deleteAdminNote);
 router.get("/users", getAdminUsers);
+router.put("/users/:id/promote-sub-admin", mainAdminOnly, promoteUserToSubAdmin);
+router.put("/users/:id/remove-sub-admin", mainAdminOnly, demoteSubAdminToUser);
 router.delete("/users/:id", deleteAdminUser);
 router.get("/feedback", getAdminFeedback);
 router.put("/feedback/:id/review", markFeedbackReviewed);
