@@ -1283,16 +1283,34 @@ body.dark-theme .admin-select {
 }
 
 .footer-content {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
+  display: grid;
+  gap: 1.1rem;
   padding: 1.4rem;
   border-radius: 28px;
   background: var(--surface-strong);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-soft);
+}
+
+.footer-main {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.footer-copyright {
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+
+.footer-copyright p {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
 }
 
 .footer-links,
@@ -1507,7 +1525,7 @@ body.dark-theme .admin-select {
 
   .explore-toolbar,
   .note-card__actions,
-  .footer-content,
+  .footer-main,
   .pagination-controls {
     flex-direction: column;
     align-items: stretch;

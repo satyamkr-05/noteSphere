@@ -81,28 +81,34 @@ export default function Layout({ children, isDark, onLogout, onToggleTheme, show
 
       <footer className="site-footer">
         <div className="container footer-content">
-          <div>
-            <NavLink to="/" className="logo logo--footer">
-              <span className="logo__mark"><i className="fa-solid fa-note-sticky"></i></span>
-              <span className="logo__text">NoteSphere</span>
-            </NavLink>
-            <p>A modern note sharing experience for focused learners.</p>
+          <div className="footer-main">
+            <div>
+              <NavLink to="/" className="logo logo--footer">
+                <span className="logo__mark"><i className="fa-solid fa-note-sticky"></i></span>
+                <span className="logo__text">NoteSphere</span>
+              </NavLink>
+              <p>A modern note sharing experience for focused learners.</p>
+            </div>
+
+            <div className="footer-links">
+              <NavLink to="/">Home</NavLink>
+              <NavLink to="/upload">Upload</NavLink>
+              <NavLink to="/explore">Explore</NavLink>
+              {user?.isAdmin ? <NavLink to="/admin">Admin</NavLink> : null}
+              <NavLink to={isAuthenticated ? "/dashboard" : "/auth"}>
+                {isAuthenticated ? "Dashboard" : "Login"}
+              </NavLink>
+            </div>
+
+            <div className="social-links" aria-label="Social links">
+              <a href="#" aria-label="Twitter"><i className="fa-brands fa-x-twitter"></i></a>
+              <a href="#" aria-label="LinkedIn"><i className="fa-brands fa-linkedin-in"></i></a>
+              <a href="#" aria-label="GitHub"><i className="fa-brands fa-github"></i></a>
+            </div>
           </div>
 
-          <div className="footer-links">
-            <NavLink to="/">Home</NavLink>
-            <NavLink to="/upload">Upload</NavLink>
-            <NavLink to="/explore">Explore</NavLink>
-            {user?.isAdmin ? <NavLink to="/admin">Admin</NavLink> : null}
-            <NavLink to={isAuthenticated ? "/dashboard" : "/auth"}>
-              {isAuthenticated ? "Dashboard" : "Login"}
-            </NavLink>
-          </div>
-
-          <div className="social-links" aria-label="Social links">
-            <a href="#" aria-label="Twitter"><i className="fa-brands fa-x-twitter"></i></a>
-            <a href="#" aria-label="LinkedIn"><i className="fa-brands fa-linkedin-in"></i></a>
-            <a href="#" aria-label="GitHub"><i className="fa-brands fa-github"></i></a>
+          <div className="footer-copyright">
+            <p>&copy; {new Date().getFullYear()} NoteSphere. All rights reserved.</p>
           </div>
         </div>
       </footer>
