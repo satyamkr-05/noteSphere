@@ -917,8 +917,18 @@ body.dark-theme .profile-card__avatar {
 
 .info-card,
 .upload-form,
-.auth-card {
+.auth-card,
+.feedback-form {
   padding: 1.4rem;
+}
+
+.feedback-form {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.feedback-form .btn {
+  margin-top: 0.4rem;
 }
 
 .info-card {

@@ -50,7 +50,14 @@ export default function HomePage({ reloadKey, showToast }) {
   });
   const [trendingNotes, setTrendingNotes] = useState([]);
   const [heroSearch, setHeroSearch] = useState("");
-  const { isAuthenticated } = useAuth();
+  const [feedbackForm, setFeedbackForm] = useState({
+    name: "",
+    email: "",
+    type: "query",
+    message: ""
+  });
+  const [isSendingFeedback, setIsSendingFeedback] = useState(false);
+  const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
 
   useReveal([trendingNotes.length, reloadKey]);
@@ -78,9 +85,46 @@ export default function HomePage({ reloadKey, showToast }) {
     });
   }, [reloadKey, showToast]);
 
+  useEffect(() => {
+    setFeedbackForm((current) => ({
+      ...current,
+      name: user?.name || "",
+      email: user?.email || ""
+    }));
+  }, [user?.name, user?.email]);
+
   function openExplore(search = "") {
     const query = search ? `?search=${encodeURIComponent(search)}` : "";
     navigate(`/explore${query}`);
+  }
+
+  function handleFeedbackFieldChange(event) {
+    const { name, value } = event.target;
+    setFeedbackForm((current) => ({
+      ...current,
+      [name]: value
+    }));
+  }
+
+  async function handleFeedbackSubmit(event) {
+    event.preventDefault();
+
+    try {
+      setIsSendingFeedback(true);
+      await api.post("/feedback", feedbackForm);
+      setFeedbackForm((current) => ({
+        ...current,
+        type: "query",
+        message: "",
+        name: user?.name || "",
+        email: user?.email || ""
+      }));
+      showToast("Your query has been sent successfully.", "success");
+    } catch (error) {
+      showToast(getErrorMessage(error, "Unable to send your message right now."), "error");
+    } finally {
+      setIsSendingFeedback(false);
+    }
   }
 
   return (
@@ -222,6 +266,96 @@ export default function HomePage({ reloadKey, showToast }) {
               </details>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className="section section--feedback">
+        <div className="container split-layout">
+          <div className="split-layout__intro reveal">
+            <span className="eyebrow">Feedback & Queries</span>
+            <h2>Need help or want to suggest something better?</h2>
+            <p>
+              Send your questions, bug reports, or feature ideas directly from here.
+              We will have your message saved properly so it can be reviewed.
+            </p>
+
+            <div className="info-stack">
+              <article className="info-card glass-card reveal is-visible">
+                <i className="fa-regular fa-comments"></i>
+                <div>
+                  <h3>Ask anything</h3>
+                  <p>Share doubts about uploads, downloads, approvals, or your account.</p>
+                </div>
+              </article>
+              <article className="info-card glass-card reveal is-visible">
+                <i className="fa-regular fa-lightbulb"></i>
+                <div>
+                  <h3>Suggest improvements</h3>
+                  <p>Feature ideas and UX feedback help make NoteSphere better for everyone.</p>
+                </div>
+              </article>
+            </div>
+          </div>
+
+          <form className="feedback-form glass-card reveal is-visible" onSubmit={handleFeedbackSubmit}>
+            <div className="form-group">
+              <label htmlFor="feedbackName">Your name</label>
+              <input
+                id="feedbackName"
+                name="name"
+                type="text"
+                placeholder="Enter your name"
+                value={feedbackForm.name}
+                onChange={handleFeedbackFieldChange}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="feedbackEmail">Email address</label>
+              <input
+                id="feedbackEmail"
+                name="email"
+                type="email"
+                placeholder="Enter your email"
+                value={feedbackForm.email}
+                onChange={handleFeedbackFieldChange}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="feedbackType">Message type</label>
+              <select
+                id="feedbackType"
+                name="type"
+                value={feedbackForm.type}
+                onChange={handleFeedbackFieldChange}
+              >
+                <option value="query">Query</option>
+                <option value="feedback">Feedback</option>
+                <option value="bug">Bug Report</option>
+                <option value="feature">Feature Request</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="feedbackMessage">Your message</label>
+              <textarea
+                id="feedbackMessage"
+                name="message"
+                rows="6"
+                placeholder="Write your query or feedback here..."
+                value={feedbackForm.message}
+                onChange={handleFeedbackFieldChange}
+                required
+              />
+            </div>
+
+            <button type="submit" className="btn btn--primary btn--full" disabled={isSendingFeedback}>
+              {isSendingFeedback ? "Sending..." : "Send Message"}
+            </button>
+          </form>
         </div>
       </section>
     </>
