@@ -34,6 +34,16 @@ const initialFeedbackSummary = {
   reviewedMessages: 0
 };
 
+const initialSubAdminSummary = {
+  totalSubAdmins: 0
+};
+
+const initialSubAdminForm = {
+  name: "",
+  email: "",
+  password: ""
+};
+
 const initialPagination = {
   currentPage: 1,
   limit: 12,
@@ -53,27 +63,38 @@ export default function AdminPage({ onNotesChanged, showToast }) {
   const [notes, setNotes] = useState([]);
   const [users, setUsers] = useState([]);
   const [feedback, setFeedback] = useState([]);
+  const [subAdmins, setSubAdmins] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [feedbackSearchQuery, setFeedbackSearchQuery] = useState("");
+  const [subAdminSearchQuery, setSubAdminSearchQuery] = useState("");
   const [isNotesLoading, setIsNotesLoading] = useState(true);
   const [isUsersLoading, setIsUsersLoading] = useState(true);
   const [isFeedbackLoading, setIsFeedbackLoading] = useState(true);
+  const [isSubAdminsLoading, setIsSubAdminsLoading] = useState(true);
+  const [isCreatingSubAdmin, setIsCreatingSubAdmin] = useState(false);
   const [editingNoteId, setEditingNoteId] = useState("");
   const [form, setForm] = useState(initialForm);
+  const [subAdminForm, setSubAdminForm] = useState(initialSubAdminForm);
   const [isSaving, setIsSaving] = useState(false);
   const [previewNote, setPreviewNote] = useState(null);
   const [notesSummary, setNotesSummary] = useState(initialNotesSummary);
   const [usersSummary, setUsersSummary] = useState(initialUsersSummary);
   const [feedbackSummary, setFeedbackSummary] = useState(initialFeedbackSummary);
+  const [subAdminSummary, setSubAdminSummary] = useState(initialSubAdminSummary);
   const [notesPagination, setNotesPagination] = useState(initialPagination);
   const [usersPagination, setUsersPagination] = useState(initialUserPagination);
   const [feedbackPagination, setFeedbackPagination] = useState(initialUserPagination);
+  const [subAdminPagination, setSubAdminPagination] = useState({
+    ...initialPagination,
+    limit: 6
+  });
   const [notesPage, setNotesPage] = useState(1);
   const [usersPage, setUsersPage] = useState(1);
   const [feedbackPage, setFeedbackPage] = useState(1);
+  const [subAdminPage, setSubAdminPage] = useState(1);
 
-  useReveal([notes.length, users.length, feedback.length, editingNoteId]);
+  useReveal([notes.length, users.length, feedback.length, subAdmins.length, editingNoteId]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -98,6 +119,25 @@ export default function AdminPage({ onNotesChanged, showToast }) {
 
     return () => window.clearTimeout(timer);
   }, [feedbackSearchQuery, feedbackPage]);
+
+  useEffect(() => {
+    if (!user?.isMainAdmin) {
+      setSubAdmins([]);
+      setSubAdminSummary(initialSubAdminSummary);
+      setSubAdminPagination({
+        ...initialPagination,
+        limit: 6
+      });
+      setIsSubAdminsLoading(false);
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      loadSubAdmins(subAdminPage);
+    }, 250);
+
+    return () => window.clearTimeout(timer);
+  }, [subAdminSearchQuery, subAdminPage, user?.isMainAdmin]);
 
   async function loadNotes(pageToLoad = notesPage) {
     try {
@@ -174,6 +214,32 @@ export default function AdminPage({ onNotesChanged, showToast }) {
       showToast(getErrorMessage(error, "Unable to load feedback inbox."), "error");
     } finally {
       setIsFeedbackLoading(false);
+    }
+  }
+
+  async function loadSubAdmins(pageToLoad = subAdminPage) {
+    try {
+      setIsSubAdminsLoading(true);
+      const response = await api.get("/admin/sub-admins", {
+        params: {
+          ...(subAdminSearchQuery ? { search: subAdminSearchQuery } : {}),
+          page: pageToLoad,
+          limit: 6
+        }
+      });
+      setSubAdmins(response.data.subAdmins || []);
+      setSubAdminSummary(response.data.summary || initialSubAdminSummary);
+      setSubAdminPagination(response.data.pagination || { ...initialPagination, limit: 6 });
+      if (response.data.pagination?.currentPage && response.data.pagination.currentPage !== pageToLoad) {
+        setSubAdminPage(response.data.pagination.currentPage);
+      }
+    } catch (error) {
+      setSubAdmins([]);
+      setSubAdminSummary(initialSubAdminSummary);
+      setSubAdminPagination({ ...initialPagination, limit: 6 });
+      showToast(getErrorMessage(error, "Unable to load sub admin accounts."), "error");
+    } finally {
+      setIsSubAdminsLoading(false);
     }
   }
 
@@ -278,6 +344,36 @@ export default function AdminPage({ onNotesChanged, showToast }) {
     }
   }
 
+  async function handleCreateSubAdmin(event) {
+    event.preventDefault();
+
+    try {
+      setIsCreatingSubAdmin(true);
+      await api.post("/admin/sub-admins", subAdminForm);
+      setSubAdminForm(initialSubAdminForm);
+      showToast("Sub admin created successfully.", "success");
+      await loadSubAdmins(subAdminPage);
+    } catch (error) {
+      showToast(getErrorMessage(error, "Unable to create the sub admin account."), "error");
+    } finally {
+      setIsCreatingSubAdmin(false);
+    }
+  }
+
+  async function handleDeleteSubAdmin(subAdminId) {
+    if (!window.confirm("Remove this sub admin account?")) {
+      return;
+    }
+
+    try {
+      await api.delete(`/admin/sub-admins/${subAdminId}`);
+      showToast("Sub admin removed successfully.", "success");
+      await loadSubAdmins(subAdminPage);
+    } catch (error) {
+      showToast(getErrorMessage(error, "Unable to remove this sub admin."), "error");
+    }
+  }
+
   return (
     <section className="section">
       <div className="container">
@@ -294,7 +390,11 @@ export default function AdminPage({ onNotesChanged, showToast }) {
                 <i className="fa-solid fa-shield-halved"></i>
                 <div>
                   <h3>{user?.name || "Administrator"}</h3>
-                  <p>Reserved administrative access is active for this workspace.</p>
+                  <p>
+                    {user?.isMainAdmin
+                      ? "Main admin access is active for this workspace."
+                      : "Sub admin access is active for this workspace."}
+                  </p>
                 </div>
               </article>
               <article className="info-card glass-card">
@@ -331,6 +431,12 @@ export default function AdminPage({ onNotesChanged, showToast }) {
                 <strong>{feedbackSummary.newMessages}</strong>
                 <span>New Messages</span>
               </article>
+              {user?.isMainAdmin ? (
+                <article className="stat-card glass-card">
+                  <strong>{subAdminSummary.totalSubAdmins}</strong>
+                  <span>Sub Admins</span>
+                </article>
+              ) : null}
             </div>
           </div>
 
@@ -603,6 +709,146 @@ export default function AdminPage({ onNotesChanged, showToast }) {
             />
           ) : null}
         </section>
+
+        {user?.isMainAdmin ? (
+          <section className="section section--compact">
+            <div className="split-layout admin-layout">
+              <div className="split-layout__intro reveal">
+                <span className="eyebrow">Sub Admins</span>
+                <h2>Create and manage sub admin accounts</h2>
+                <p>
+                  Sub admins can use the admin panel like regular admins, but they cannot replace
+                  or delete the main admin account.
+                </p>
+
+                <div className="info-stack">
+                  <article className="info-card glass-card">
+                    <i className="fa-solid fa-user-shield"></i>
+                    <div>
+                      <h3>Main admin controls this list</h3>
+                      <p>Only the main admin can create or remove sub admin accounts.</p>
+                    </div>
+                  </article>
+                </div>
+              </div>
+
+              <form className="upload-form glass-card reveal" onSubmit={handleCreateSubAdmin}>
+                <div className="section-heading dashboard-editor__heading">
+                  <span className="eyebrow">Create Sub Admin</span>
+                  <h2>Add another admin account</h2>
+                  <p>Create a new sub admin who can help manage notes, users, and feedback.</p>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="subAdminName">Name</label>
+                  <input
+                    id="subAdminName"
+                    type="text"
+                    value={subAdminForm.name}
+                    onChange={(event) => setSubAdminForm((current) => ({ ...current, name: event.target.value }))}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="subAdminEmail">Email</label>
+                  <input
+                    id="subAdminEmail"
+                    type="email"
+                    value={subAdminForm.email}
+                    onChange={(event) => setSubAdminForm((current) => ({ ...current, email: event.target.value }))}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="subAdminPassword">Password</label>
+                  <input
+                    id="subAdminPassword"
+                    type="password"
+                    minLength="6"
+                    value={subAdminForm.password}
+                    onChange={(event) => setSubAdminForm((current) => ({ ...current, password: event.target.value }))}
+                    required
+                  />
+                </div>
+
+                <button type="submit" className="btn btn--primary btn--full" disabled={isCreatingSubAdmin}>
+                  {isCreatingSubAdmin ? "Creating..." : "Create Sub Admin"}
+                </button>
+              </form>
+            </div>
+
+            <div className="explore-toolbar glass-card reveal">
+              <div className="search-field">
+                <i className="fa-solid fa-magnifying-glass"></i>
+                <input
+                  type="text"
+                  placeholder="Search sub admins by name or email"
+                  value={subAdminSearchQuery}
+                  onChange={(event) => {
+                    setSubAdminSearchQuery(event.target.value);
+                    setSubAdminPage(1);
+                  }}
+                />
+              </div>
+
+              <div className="admin-toolbar-actions">
+                <button
+                  type="button"
+                  className="btn btn--secondary"
+                  onClick={() => {
+                    setSubAdminSearchQuery("");
+                    setSubAdminPage(1);
+                  }}
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+
+            {isSubAdminsLoading ? <div className="page-status glass-card">Loading sub admin accounts...</div> : null}
+
+            <div className="admin-users-grid">
+              {subAdmins.map((account) => (
+                <article key={account.id} className="user-card glass-card reveal is-visible">
+                  <div className="user-card__header">
+                    <div>
+                      <h3>{account.name}</h3>
+                      <p>{account.email}</p>
+                    </div>
+                    <span className="status-badge status-badge--approved">Sub Admin</span>
+                  </div>
+
+                  <div className="user-card__meta">
+                    <span><i className="fa-regular fa-calendar"></i> Joined {formatDate(account.createdAt)}</span>
+                    <span><i className="fa-solid fa-shield-halved"></i> Admin access enabled</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="btn btn--primary btn--full"
+                    onClick={() => handleDeleteSubAdmin(account.id)}
+                  >
+                    Remove Sub Admin
+                  </button>
+                </article>
+              ))}
+            </div>
+
+            {!isSubAdminsLoading && subAdmins.length === 0 ? (
+              <p className="empty-state glass-card">No sub admin accounts found.</p>
+            ) : null}
+
+            {!isSubAdminsLoading && subAdmins.length > 0 ? (
+              <PaginationControls
+                pagination={subAdminPagination}
+                onPageChange={setSubAdminPage}
+                itemLabel="sub admins"
+              />
+            ) : null}
+          </section>
+        ) : null}
 
         <section className="section section--compact">
           <div className="section-heading reveal">

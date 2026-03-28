@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+import { ADMIN_ROLES } from "../config/runtime.js";
 
 const userSchema = new mongoose.Schema(
   {
@@ -18,6 +19,11 @@ const userSchema = new mongoose.Schema(
     avatarPath: {
       type: String,
       default: ""
+    },
+    adminRole: {
+      type: String,
+      enum: Object.values(ADMIN_ROLES),
+      default: ADMIN_ROLES.USER
     },
     password: {
       type: String,

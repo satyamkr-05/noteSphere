@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import User from "../models/User.js";
-import { getPrimaryClientUrl, isAdminEmail } from "../config/runtime.js";
+import { getPrimaryClientUrl, isMainAdminEmail } from "../config/runtime.js";
 import { createToken } from "../utils/createToken.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { isMailConfigured, sendPasswordResetEmail } from "../utils/sendEmail.js";
@@ -55,7 +55,7 @@ export const registerUser = asyncHandler(async (req, res) => {
     throw new Error("Name, email, and password are required.");
   }
 
-  if (isAdminEmail(normalizedEmail)) {
+  if (isMainAdminEmail(normalizedEmail)) {
     res.status(403);
     throw new Error("This email is reserved for admin access.");
   }

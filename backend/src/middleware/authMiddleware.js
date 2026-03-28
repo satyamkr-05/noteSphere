@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import { getJwtSecret } from "../config/env.js";
-import { getAdminEmail, isAdminEmail } from "../config/runtime.js";
+import { getAdminEmail, getResolvedAdminRole, isAdminUser, isMainAdminUser } from "../config/runtime.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { AppError } from "../utils/appError.js";
 
@@ -39,7 +39,9 @@ export const protect = asyncHandler(async (req, res, next) => {
     }
   }
 
-  user.isAdmin = isAdminEmail(user.email);
+  user.adminRole = getResolvedAdminRole(user);
+  user.isAdmin = isAdminUser(user);
+  user.isMainAdmin = isMainAdminUser(user);
   req.user = user;
   next();
 });
@@ -51,6 +53,14 @@ export function adminOnly(req, _res, next) {
 
   if (!req.user?.isAdmin) {
     throw new AppError("Admin access only.", 403);
+  }
+
+  next();
+}
+
+export function mainAdminOnly(req, _res, next) {
+  if (!req.user?.isMainAdmin) {
+    throw new AppError("Main admin access only.", 403);
   }
 
   next();

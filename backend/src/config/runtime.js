@@ -1,5 +1,11 @@
 import path from "path";
 
+export const ADMIN_ROLES = {
+  USER: "user",
+  SUB_ADMIN: "sub_admin",
+  MAIN_ADMIN: "main_admin"
+};
+
 export const isVercel = process.env.VERCEL === "1";
 const configuredUploadDir = process.env.UPLOAD_DIR?.trim();
 
@@ -65,6 +71,42 @@ export function getAdminName() {
 export function isAdminEmail(email = "") {
   const adminEmail = getAdminEmail();
   return Boolean(adminEmail && email.trim().toLowerCase() === adminEmail);
+}
+
+export function isMainAdminEmail(email = "") {
+  return isAdminEmail(email);
+}
+
+export function getResolvedAdminRole(userOrEmail) {
+  if (!userOrEmail) {
+    return ADMIN_ROLES.USER;
+  }
+
+  const email = typeof userOrEmail === "string"
+    ? userOrEmail
+    : userOrEmail.email || "";
+  const storedRole = typeof userOrEmail === "string"
+    ? ADMIN_ROLES.USER
+    : userOrEmail.adminRole || ADMIN_ROLES.USER;
+
+  if (isMainAdminEmail(email)) {
+    return ADMIN_ROLES.MAIN_ADMIN;
+  }
+
+  if (storedRole === ADMIN_ROLES.SUB_ADMIN || storedRole === ADMIN_ROLES.MAIN_ADMIN) {
+    return storedRole;
+  }
+
+  return ADMIN_ROLES.USER;
+}
+
+export function isAdminUser(userOrEmail) {
+  const role = getResolvedAdminRole(userOrEmail);
+  return role === ADMIN_ROLES.MAIN_ADMIN || role === ADMIN_ROLES.SUB_ADMIN;
+}
+
+export function isMainAdminUser(userOrEmail) {
+  return getResolvedAdminRole(userOrEmail) === ADMIN_ROLES.MAIN_ADMIN;
 }
 
 export function getStorageConfig() {

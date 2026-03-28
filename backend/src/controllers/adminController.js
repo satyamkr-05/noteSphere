@@ -9,11 +9,19 @@ import {
   parsePagination,
   serializePagination
 } from "../utils/pagination.js";
+import {
+  ADMIN_ROLES,
+  getAdminEmail,
+  getResolvedAdminRole,
+  isAdminUser,
+  isMainAdminEmail,
+  isMainAdminUser
+} from "../config/runtime.js";
 import { serializeNote } from "../utils/serializeNote.js";
 import { AppError } from "../utils/appError.js";
 import { removeStoredFile } from "../utils/noteFiles.js";
-import { getAdminEmail, isAdminEmail } from "../config/runtime.js";
 import { NOTE_LIMITS } from "../../../shared/noteLimits.js";
+import { serializeUser } from "../utils/serializeUser.js";
 
 function getContentTypeLabel(fileName = "") {
   const extension = path.extname(fileName).toLowerCase();
@@ -30,11 +38,15 @@ function getContentTypeLabel(fileName = "") {
 }
 
 function serializeAdminUser(user, uploadedNotes = 0, sharedContentTypes = []) {
+  const adminRole = getResolvedAdminRole(user);
+
   return {
     id: user._id,
     name: user.name,
     email: user.email,
-    isAdmin: isAdminEmail(user.email),
+    isAdmin: isAdminUser(user),
+    isMainAdmin: adminRole === ADMIN_ROLES.MAIN_ADMIN,
+    adminRole,
     createdAt: user.createdAt,
     uploadedNotes,
     sharedContentTypes
@@ -44,12 +56,7 @@ function serializeAdminUser(user, uploadedNotes = 0, sharedContentTypes = []) {
 function buildAdminAuthResponse(user) {
   return {
     token: createToken(user._id),
-    user: {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      isAdmin: true
-    }
+    user: serializeUser(user)
   };
 }
 
@@ -144,19 +151,20 @@ async function findNoteWithRelations(noteId) {
 
 export const loginAdmin = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
+  const normalizedEmail = normalizeText(email).toLowerCase();
 
-  if (!email || !password) {
+  if (!normalizedEmail || !password) {
     throw new AppError("Email and password are required.", 400);
   }
 
-  if (!isAdminEmail(email)) {
-    throw new AppError("Only the configured admin account can access this page.", 403);
-  }
-
-  const user = await User.findOne({ email: email.trim().toLowerCase() }).select("+password");
+  const user = await User.findOne({ email: normalizedEmail }).select("+password");
 
   if (!user || !(await user.matchPassword(password))) {
     throw new AppError("Invalid admin email or password.", 401);
+  }
+
+  if (!isAdminUser(user)) {
+    throw new AppError("This account does not have admin access.", 403);
   }
 
   res.json(buildAdminAuthResponse(user));
@@ -298,14 +306,22 @@ export const getAdminUsers = asyncHandler(async (req, res) => {
   });
   const { filter, hasSearchQuery } = buildTextSearchFilter(search);
   const [totalItems, totalAccounts, totalNotes, activeUploaderIds] = await Promise.all([
-    User.countDocuments(filter),
-    User.countDocuments({}),
+    User.countDocuments({
+      ...filter,
+      adminRole: ADMIN_ROLES.USER,
+      email: { $ne: getAdminEmail() }
+    }),
+    User.countDocuments({ adminRole: ADMIN_ROLES.USER, email: { $ne: getAdminEmail() } }),
     Note.countDocuments({}),
     Note.distinct("uploadedBy")
   ]);
   const pagination = buildPagination(requestedPagination, totalItems);
   const users = await User.find(
-    filter,
+    {
+      ...filter,
+      adminRole: ADMIN_ROLES.USER,
+      email: { $ne: getAdminEmail() }
+    },
     hasSearchQuery ? { score: { $meta: "textScore" } } : {}
   )
     .sort(
@@ -419,6 +435,93 @@ export const deleteAdminFeedback = asyncHandler(async (req, res) => {
   res.json({ message: "Feedback deleted successfully." });
 });
 
+export const getAdminSubAdmins = asyncHandler(async (req, res) => {
+  const { search = "" } = req.query;
+  const requestedPagination = parsePagination(req.query, {
+    defaultLimit: 6,
+    maxLimit: 18
+  });
+  const { filter, hasSearchQuery } = buildTextSearchFilter(search);
+  filter.adminRole = ADMIN_ROLES.SUB_ADMIN;
+
+  const [totalItems, totalSubAdmins] = await Promise.all([
+    User.countDocuments(filter),
+    User.countDocuments({ adminRole: ADMIN_ROLES.SUB_ADMIN })
+  ]);
+  const pagination = buildPagination(requestedPagination, totalItems);
+  const subAdmins = await User.find(
+    filter,
+    hasSearchQuery ? { score: { $meta: "textScore" } } : {}
+  )
+    .sort(
+      hasSearchQuery
+        ? { score: { $meta: "textScore" }, createdAt: -1 }
+        : { createdAt: -1 }
+    )
+    .skip(pagination.skip)
+    .limit(pagination.limit);
+
+  res.json({
+    summary: {
+      totalSubAdmins
+    },
+    subAdmins: subAdmins.map((account) => serializeUser(account)),
+    pagination: serializePagination(pagination)
+  });
+});
+
+export const createSubAdmin = asyncHandler(async (req, res) => {
+  const name = validateRequiredTextField(res, "Name", req.body.name, 60);
+  const email = validateRequiredTextField(res, "Email", req.body.email, 120).toLowerCase();
+  const password = normalizeText(req.body.password);
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new AppError("Please enter a valid email address.", 400);
+  }
+
+  if (isMainAdminEmail(email)) {
+    throw new AppError("The main admin email is reserved and cannot be added as a sub admin.", 400);
+  }
+
+  if (!password || password.length < 6) {
+    throw new AppError("Password must be at least 6 characters long.", 400);
+  }
+
+  const existingUser = await User.findOne({ email });
+
+  if (existingUser) {
+    throw new AppError("An account with that email already exists.", 409);
+  }
+
+  const subAdmin = await User.create({
+    name,
+    email,
+    password,
+    adminRole: ADMIN_ROLES.SUB_ADMIN
+  });
+
+  res.status(201).json({
+    message: "Sub admin created successfully.",
+    subAdmin: serializeUser(subAdmin)
+  });
+});
+
+export const deleteSubAdmin = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+
+  if (!user) {
+    throw new AppError("Sub admin account not found.", 404);
+  }
+
+  if (isMainAdminUser(user) || user.adminRole !== ADMIN_ROLES.SUB_ADMIN) {
+    throw new AppError("Only sub admin accounts can be deleted from this section.", 400);
+  }
+
+  await user.deleteOne();
+
+  res.json({ message: "Sub admin removed successfully." });
+});
+
 export const deleteAdminUser = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id);
 
@@ -426,8 +529,8 @@ export const deleteAdminUser = asyncHandler(async (req, res) => {
     throw new AppError("User account not found.", 404);
   }
 
-  if (user.email === getAdminEmail()) {
-    throw new AppError("The configured admin account cannot be deleted.", 403);
+  if (isAdminUser(user)) {
+    throw new AppError("Admin accounts cannot be deleted from the user accounts section.", 403);
   }
 
   const notes = await Note.find({ uploadedBy: user._id });

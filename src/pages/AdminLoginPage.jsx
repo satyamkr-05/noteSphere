@@ -45,7 +45,7 @@ export default function AdminLoginPage({ showToast }) {
             <span className="eyebrow">Admin Access</span>
             <h2>Secure administration for NoteSphere</h2>
             <p>
-              Sign in with the configured administrator account to review notes, manage users,
+              Sign in with a main admin or sub admin account to review notes, manage users,
               and keep the platform organized.
             </p>
 

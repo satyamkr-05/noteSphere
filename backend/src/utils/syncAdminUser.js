@@ -1,5 +1,5 @@
 import User from "../models/User.js";
-import { getAdminEmail, getAdminName, getAdminPassword } from "../config/runtime.js";
+import { ADMIN_ROLES, getAdminEmail, getAdminName, getAdminPassword } from "../config/runtime.js";
 
 export async function syncAdminUser() {
   const adminEmail = getAdminEmail();
@@ -16,6 +16,7 @@ export async function syncAdminUser() {
     await User.create({
       name: adminName,
       email: adminEmail,
+      adminRole: ADMIN_ROLES.MAIN_ADMIN,
       password: adminPassword
     });
     console.log(`Admin user created for ${adminEmail}`);
@@ -26,6 +27,11 @@ export async function syncAdminUser() {
 
   if (adminUser.name !== adminName) {
     adminUser.name = adminName;
+    shouldSave = true;
+  }
+
+  if (adminUser.adminRole !== ADMIN_ROLES.MAIN_ADMIN) {
+    adminUser.adminRole = ADMIN_ROLES.MAIN_ADMIN;
     shouldSave = true;
   }
 
