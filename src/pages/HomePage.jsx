@@ -13,6 +13,34 @@ const topSubjects = [
   { icon: "fa-pen-ruler", label: "Design" }
 ];
 
+const faqItems = [
+  {
+    question: "How do I upload my notes on NoteSphere?",
+    answer:
+      "Sign in, open the Upload Notes page, add your title, subject, description, and file, then submit it for review."
+  },
+  {
+    question: "Can I preview notes before downloading them?",
+    answer:
+      "Yes. Approved notes can be previewed directly inside the platform so users can quickly check the content before downloading."
+  },
+  {
+    question: "How are uploaded notes approved?",
+    answer:
+      "Each upload goes through an admin review process to help keep the library clean, relevant, and safe for students."
+  },
+  {
+    question: "Will my profile show my uploads and activity?",
+    answer:
+      "Yes. Your profile displays your uploaded notes, profile picture, upload stats, and your note download activity."
+  },
+  {
+    question: "What file types can I share?",
+    answer:
+      "You can upload common document formats supported by the platform, such as PDFs and study documents, as long as they follow the upload rules."
+  }
+];
+
 export default function HomePage({ reloadKey, showToast }) {
   const [homeStats, setHomeStats] = useState({
     totalApprovedNotes: 0,
@@ -170,6 +198,28 @@ export default function HomePage({ reloadKey, showToast }) {
                   <span><i className="fa-solid fa-download"></i> {note.downloads}</span>
                 </div>
               </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="section section--faq">
+        <div className="container">
+          <div className="section-heading reveal">
+            <span className="eyebrow">FAQ</span>
+            <h2>Common questions, answered clearly</h2>
+            <p>Everything new users usually want to know before they start uploading and exploring notes.</p>
+          </div>
+
+          <div className="faq-list">
+            {faqItems.map((item) => (
+              <details key={item.question} className="faq-item glass-card reveal">
+                <summary className="faq-item__summary">
+                  <span>{item.question}</span>
+                  <i className="fa-solid fa-plus"></i>
+                </summary>
+                <p>{item.answer}</p>
+              </details>
             ))}
           </div>
         </div>
