@@ -1283,6 +1283,7 @@ body.dark-theme .profile-card__info-value {
   align-items: flex-start;
   justify-content: space-between;
   gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .note-card__actions {
@@ -2176,6 +2177,30 @@ body.dark-theme .admin-select {
   .pagination-controls {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .user-card__header,
+  .note-card__header {
+    align-items: flex-start;
+  }
+
+  .note-card__buttons {
+    width: 100%;
+    flex-direction: column;
+    justify-content: stretch;
+  }
+
+  .note-card__buttons .btn {
+    width: 100%;
+  }
+
+  .admin-toolbar-actions {
+    width: 100%;
+  }
+
+  .admin-toolbar-actions .btn,
+  .admin-toolbar-actions .admin-select {
+    width: 100%;
   }
 
   .profile-stats-grid {
