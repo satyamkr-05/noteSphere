@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import NotePreviewModal from "../components/NotePreviewModal";
 import PaginationControls from "../components/PaginationControls";
 import { useAuth } from "../context/AuthContext";
@@ -27,6 +27,7 @@ const emptyStats = {
 export default function ProfilePage({ showToast }) {
   const { user, updateCurrentUser } = useAuth();
   const [profileUser, setProfileUser] = useState(user);
+  const [nameDraft, setNameDraft] = useState(user?.name || "");
   const [stats, setStats] = useState(emptyStats);
   const [notes, setNotes] = useState([]);
   const [pagination, setPagination] = useState(initialPagination);
@@ -34,6 +35,8 @@ export default function ProfilePage({ showToast }) {
   const [previewNote, setPreviewNote] = useState(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isRemovingAvatar, setIsRemovingAvatar] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
   const fileInputRef = useRef(null);
 
   useReveal([notes.length, currentPage]);
@@ -41,6 +44,10 @@ export default function ProfilePage({ showToast }) {
   useEffect(() => {
     loadProfile(currentPage);
   }, [currentPage]);
+
+  useEffect(() => {
+    setNameDraft(profileUser?.name || "");
+  }, [profileUser?.name]);
 
   async function loadProfile(pageToLoad = currentPage) {
     try {
@@ -116,17 +123,31 @@ export default function ProfilePage({ showToast }) {
     }
   }
 
-  const memberSince = useMemo(() => {
-    if (!profileUser?.createdAt) {
-      return "Recently joined";
+  async function handleSaveProfile(event) {
+    event.preventDefault();
+
+    const normalizedName = nameDraft.trim();
+
+    if (!normalizedName) {
+      showToast("Please enter your name.", "error");
+      return;
     }
 
-    return new Date(profileUser.createdAt).toLocaleDateString("en-IN", {
-      day: "numeric",
-      month: "short",
-      year: "numeric"
-    });
-  }, [profileUser?.createdAt]);
+    try {
+      setIsSavingProfile(true);
+      const response = await api.put("/users/me", {
+        name: normalizedName
+      });
+      setProfileUser(response.data.user);
+      updateCurrentUser(response.data.user);
+      setIsEditingProfile(false);
+      showToast("Profile updated successfully.", "success");
+    } catch (error) {
+      showToast(getErrorMessage(error, "Unable to update your profile."), "error");
+    } finally {
+      setIsSavingProfile(false);
+    }
+  }
 
   return (
     <section className="section">
@@ -143,12 +164,58 @@ export default function ProfilePage({ showToast }) {
 
             <div className="profile-card__copy">
               <span className="eyebrow">My Profile</span>
-              <h2>{profileUser?.name || "Your profile"}</h2>
+              <p className="profile-card__meta-line">
+                <strong>User Name = </strong>
+                <span>{profileUser?.name || "Your profile"}</span>
+              </p>
               <p>{profileUser?.email}</p>
-              <small>Member since {memberSince}</small>
             </div>
 
             <div className="profile-card__actions">
+              {isEditingProfile ? (
+                <form className="profile-card__form" onSubmit={handleSaveProfile}>
+                  <div className="form-group">
+                    <label htmlFor="profileName">User Name</label>
+                    <input
+                      id="profileName"
+                      type="text"
+                      value={nameDraft}
+                      onChange={(event) => setNameDraft(event.target.value)}
+                      maxLength="60"
+                      required
+                    />
+                  </div>
+                  <div className="profile-card__button-group">
+                    <button
+                      type="submit"
+                      className="btn btn--primary btn--full"
+                      disabled={isSavingProfile}
+                    >
+                      {isSavingProfile ? "Saving..." : "Save Changes"}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn--secondary btn--full"
+                      onClick={() => {
+                        setNameDraft(profileUser?.name || "");
+                        setIsEditingProfile(false);
+                      }}
+                      disabled={isSavingProfile}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <button
+                  type="button"
+                  className="btn btn--secondary btn--full"
+                  onClick={() => setIsEditingProfile(true)}
+                >
+                  Edit Profile
+                </button>
+              )}
+
               <input
                 ref={fileInputRef}
                 type="file"
@@ -156,24 +223,29 @@ export default function ProfilePage({ showToast }) {
                 hidden
                 onChange={handleAvatarChange}
               />
-              <button
-                type="button"
-                className="btn btn--primary btn--full"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploadingAvatar || isRemovingAvatar}
-              >
-                {isUploadingAvatar ? "Uploading..." : "Upload Profile Picture"}
-              </button>
-              {profileUser?.avatarUrl ? (
+
+              <div className="profile-card__button-group">
                 <button
                   type="button"
-                  className="btn btn--secondary btn--full"
-                  onClick={handleRemoveAvatar}
-                  disabled={isUploadingAvatar || isRemovingAvatar}
+                  className="btn btn--primary btn--full"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingAvatar || isRemovingAvatar || isSavingProfile}
                 >
-                  {isRemovingAvatar ? "Removing..." : "Remove Profile Picture"}
+                  {isUploadingAvatar ? "Uploading..." : "Upload Profile Picture"}
                 </button>
-              ) : null}
+                {profileUser?.avatarUrl ? (
+                  <button
+                    type="button"
+                    className="profile-card__icon-button"
+                    onClick={handleRemoveAvatar}
+                    disabled={isUploadingAvatar || isRemovingAvatar || isSavingProfile}
+                    aria-label="Remove profile picture"
+                    title="Remove profile picture"
+                  >
+                    <i className={`fa-solid ${isRemovingAvatar ? "fa-spinner fa-spin" : "fa-trash-can"}`}></i>
+                  </button>
+                ) : null}
+              </div>
             </div>
           </aside>
 
