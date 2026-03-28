@@ -5,7 +5,8 @@ import { useAuth } from "../context/AuthContext";
 export default function Layout({ children, isDark, onLogout, onToggleTheme, showToast }) {
   const [navOpen, setNavOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const profileMenuRef = useRef(null);
+  const desktopProfileMenuRef = useRef(null);
+  const mobileProfileMenuRef = useRef(null);
   const { isAuthenticated, user } = useAuth();
 
   useEffect(() => {
@@ -14,7 +15,10 @@ export default function Layout({ children, isDark, onLogout, onToggleTheme, show
 
   useEffect(() => {
     function handleClickOutside(event) {
-      if (!profileMenuRef.current?.contains(event.target)) {
+      const isInsideDesktopMenu = desktopProfileMenuRef.current?.contains(event.target);
+      const isInsideMobileMenu = mobileProfileMenuRef.current?.contains(event.target);
+
+      if (!isInsideDesktopMenu && !isInsideMobileMenu) {
         setProfileMenuOpen(false);
       }
     }
@@ -26,6 +30,60 @@ export default function Layout({ children, isDark, onLogout, onToggleTheme, show
   function closeNav() {
     setNavOpen(false);
     setProfileMenuOpen(false);
+  }
+
+  function renderProfileMenu({ mobile = false } = {}) {
+    const menuClassName = `profile-menu ${mobile ? "profile-menu--mobile" : "profile-menu--desktop"}${profileMenuOpen ? " is-open" : ""}`;
+
+    return (
+      <div
+        className={menuClassName}
+        ref={mobile ? mobileProfileMenuRef : desktopProfileMenuRef}
+      >
+        <button
+          type="button"
+          className="profile-trigger"
+          aria-haspopup="menu"
+          aria-expanded={profileMenuOpen}
+          onClick={() => setProfileMenuOpen((current) => !current)}
+        >
+          {user?.avatarUrl ? (
+            <img src={user.avatarUrl} alt={user.name} className="profile-trigger__avatar" />
+          ) : (
+            <span className="profile-trigger__avatar profile-trigger__avatar--fallback">
+              {getInitials(user?.name)}
+            </span>
+          )}
+          <span className="profile-trigger__copy">
+            <strong>{user?.name || "Profile"}</strong>
+            <small>{user?.email}</small>
+          </span>
+          <i className={`fa-solid ${profileMenuOpen ? "fa-chevron-up" : "fa-chevron-down"}`}></i>
+        </button>
+
+        <div className="profile-dropdown glass-card" role="menu">
+          <NavLink to="/profile" className="profile-dropdown__link" onClick={closeNav}>
+            <i className="fa-regular fa-user"></i>
+            <span>My Profile</span>
+          </NavLink>
+          <NavLink to="/dashboard" className="profile-dropdown__link" onClick={closeNav}>
+            <i className="fa-regular fa-note-sticky"></i>
+            <span>My Dashboard</span>
+          </NavLink>
+          <button
+            type="button"
+            className="profile-dropdown__link"
+            onClick={() => {
+              onLogout();
+              closeNav();
+            }}
+          >
+            <i className="fa-solid fa-right-from-bracket"></i>
+            <span>Logout</span>
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -48,6 +106,10 @@ export default function Layout({ children, isDark, onLogout, onToggleTheme, show
             <i className={`fa-solid ${navOpen ? "fa-xmark" : "fa-bars"}`}></i>
           </button>
 
+          <div className="mobile-header-right" aria-hidden={!isAuthenticated}>
+            {isAuthenticated ? renderProfileMenu({ mobile: true }) : <span className="mobile-header-spacer"></span>}
+          </div>
+
           <div className={`nav-menu${navOpen ? " is-open" : ""}`} id="navMenu">
             <NavLink to="/" onClick={closeNav}>Home</NavLink>
             <NavLink to="/upload" onClick={closeNav}>Upload Notes</NavLink>
@@ -68,52 +130,7 @@ export default function Layout({ children, isDark, onLogout, onToggleTheme, show
               <i className={`fa-solid ${isDark ? "fa-sun" : "fa-moon"}`}></i>
               <span>{isDark ? "Light" : "Dark"}</span>
             </button>
-            {isAuthenticated ? (
-              <div className={`profile-menu${profileMenuOpen ? " is-open" : ""}`} ref={profileMenuRef}>
-                <button
-                  type="button"
-                  className="profile-trigger"
-                  aria-haspopup="menu"
-                  aria-expanded={profileMenuOpen}
-                  onClick={() => setProfileMenuOpen((current) => !current)}
-                >
-                  {user?.avatarUrl ? (
-                    <img src={user.avatarUrl} alt={user.name} className="profile-trigger__avatar" />
-                  ) : (
-                    <span className="profile-trigger__avatar profile-trigger__avatar--fallback">
-                      {getInitials(user?.name)}
-                    </span>
-                  )}
-                  <span className="profile-trigger__copy">
-                    <strong>{user?.name || "Profile"}</strong>
-                    <small>{user?.email}</small>
-                  </span>
-                  <i className={`fa-solid ${profileMenuOpen ? "fa-chevron-up" : "fa-chevron-down"}`}></i>
-                </button>
-
-                <div className="profile-dropdown glass-card" role="menu">
-                  <NavLink to="/profile" className="profile-dropdown__link" onClick={closeNav}>
-                    <i className="fa-regular fa-user"></i>
-                    <span>My Profile</span>
-                  </NavLink>
-                  <NavLink to="/dashboard" className="profile-dropdown__link" onClick={closeNav}>
-                    <i className="fa-regular fa-note-sticky"></i>
-                    <span>My Dashboard</span>
-                  </NavLink>
-                  <button
-                    type="button"
-                    className="profile-dropdown__link"
-                    onClick={() => {
-                      onLogout();
-                      closeNav();
-                    }}
-                  >
-                    <i className="fa-solid fa-right-from-bracket"></i>
-                    <span>Logout</span>
-                  </button>
-                </div>
-              </div>
-            ) : null}
+            {isAuthenticated ? renderProfileMenu() : null}
           </div>
         </nav>
 

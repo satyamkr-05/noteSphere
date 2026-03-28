@@ -297,6 +297,11 @@ body.dark-theme .nav-toggle {
   position: relative;
 }
 
+.profile-menu--mobile,
+.mobile-header-right {
+  display: none;
+}
+
 .profile-trigger {
   min-width: 0;
   display: inline-flex;
@@ -1755,12 +1760,66 @@ body.dark-theme .admin-select {
   }
 
   .navbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
     padding: 0.9rem 1rem;
+  }
+
+  .logo {
+    min-width: 0;
+    justify-self: start;
   }
 
   .nav-toggle {
     display: inline-grid;
     place-items: center;
+    justify-self: center;
+  }
+
+  .mobile-header-right {
+    display: flex;
+    justify-content: flex-end;
+    justify-self: end;
+  }
+
+  .mobile-header-spacer {
+    display: block;
+    width: 2.8rem;
+    height: 2.8rem;
+  }
+
+  .profile-menu--mobile {
+    display: block;
+  }
+
+  .profile-menu--desktop {
+    display: none;
+  }
+
+  .profile-menu--mobile .profile-trigger {
+    width: auto;
+    padding: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+  }
+
+  body.dark-theme .profile-menu--mobile .profile-trigger {
+    background: transparent;
+    box-shadow: none;
+    border-color: transparent;
+  }
+
+  .profile-menu--mobile .profile-trigger__copy,
+  .profile-menu--mobile .profile-trigger > i {
+    display: none;
+  }
+
+  .profile-menu--mobile .profile-trigger__avatar {
+    width: 2.8rem;
+    height: 2.8rem;
   }
 
   .nav-menu {
@@ -1800,6 +1859,14 @@ body.dark-theme .admin-select {
     position: static;
     min-width: 100%;
     margin-top: 0.65rem;
+  }
+
+  .profile-menu--mobile .profile-dropdown {
+    position: absolute;
+    top: calc(100% + 0.7rem);
+    right: 0;
+    min-width: 220px;
+    margin-top: 0;
   }
 
   .nav-menu a,
