@@ -199,7 +199,7 @@ section[id] {
 
 .site-header {
   position: relative;
-  padding: 5.5rem 0 4rem;
+  padding: 5.2rem 0 2.2rem;
 }
 
 .navbar {
@@ -492,23 +492,37 @@ body.dark-theme .floating-theme-toggle {
   background: rgba(12, 23, 44, 0.92);
 }
 
-.floating-home-button {
-  position: fixed;
-  right: 1rem;
-  bottom: 1rem;
-  z-index: 38;
-  padding: 0.9rem 1rem;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.88);
-  border: 1px solid rgba(255, 255, 255, 0.62);
-  box-shadow: var(--shadow);
-  color: var(--text);
+.page-crumb {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0.75rem;
+  color: var(--text-soft);
 }
 
-body.dark-theme .floating-home-button {
-  background: rgba(12, 23, 44, 0.92);
-  border-color: rgba(138, 160, 255, 0.18);
-  color: #eef3ff;
+.page-crumb__home,
+.page-crumb__current {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.65rem;
+  padding: 0.55rem 0.95rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.58);
+  color: var(--primary-dark);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+body.dark-theme .page-crumb__home,
+body.dark-theme .page-crumb__current {
+  background: rgba(138, 160, 255, 0.16);
+  color: #e7eeff;
+  border: 1px solid rgba(138, 160, 255, 0.3);
+}
+
+.page-crumb__divider {
+  font-weight: 700;
+  color: var(--text-soft);
 }
 
 .hero {
@@ -1942,7 +1956,7 @@ body.dark-theme .admin-select {
 
 @media (max-width: 1080px) {
   .site-header {
-    padding-top: 6rem;
+    padding-top: 5.6rem;
   }
 
   .hero,
@@ -1982,7 +1996,7 @@ body.dark-theme .admin-select {
 
 @media (max-width: 760px) {
   .site-header {
-    padding-top: 6.25rem;
+    padding-top: 5.85rem;
   }
 
   .navbar {
@@ -2153,12 +2167,10 @@ body.dark-theme .admin-select {
     display: none;
   }
 
-  .floating-home-button {
-    right: 0.85rem;
-    bottom: 0.85rem;
-    min-width: 2.9rem;
-    min-height: 2.9rem;
-    padding: 0.8rem 0.95rem;
+  .page-crumb {
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 0.55rem;
   }
 
   .hero {
@@ -2221,11 +2233,7 @@ body.dark-theme .admin-select {
   }
 
   .site-header {
-    padding-top: 6rem;
-  }
-
-  .floating-home-button span {
-    display: none;
+    padding-top: 5.55rem;
   }
 
   .hero h1 {

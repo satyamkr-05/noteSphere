@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function Layout({ children, isDark, onLogout, onToggleTheme, showToast }) {
@@ -8,6 +8,9 @@ export default function Layout({ children, isDark, onLogout, onToggleTheme, show
   const desktopProfileMenuRef = useRef(null);
   const mobileProfileMenuRef = useRef(null);
   const { isAuthenticated, user } = useAuth();
+  const location = useLocation();
+  const currentPageLabel = getPageLabel(location.pathname);
+  const showPageCrumb = location.pathname !== "/";
 
   useEffect(() => {
     document.body.classList.toggle("menu-open", navOpen);
@@ -142,16 +145,6 @@ export default function Layout({ children, isDark, onLogout, onToggleTheme, show
           </div>
         </nav>
 
-        <NavLink
-          to="/"
-          className="floating-home-button nav-action-button"
-          aria-label="Go to home"
-          onClick={closeNav}
-        >
-          <i className="fa-solid fa-house"></i>
-          <span>Home</span>
-        </NavLink>
-
         <button
           type="button"
           className="floating-theme-toggle nav-action-button nav-theme-toggle nav-theme-toggle--desktop"
@@ -166,7 +159,18 @@ export default function Layout({ children, isDark, onLogout, onToggleTheme, show
         </button>
       </header>
 
-      <main>{children}</main>
+      <main>
+        {showPageCrumb ? (
+          <div className="page-crumb container">
+            <NavLink to="/" className="page-crumb__home" onClick={closeNav}>
+              Home
+            </NavLink>
+            <span className="page-crumb__divider">/</span>
+            <span className="page-crumb__current">{currentPageLabel}</span>
+          </div>
+        ) : null}
+        {children}
+      </main>
 
       <footer className="site-footer">
         <div className="container footer-content">
@@ -214,4 +218,44 @@ function getInitials(name = "") {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase() || "")
     .join("") || "NS";
+}
+
+function getPageLabel(pathname) {
+  if (pathname.startsWith("/upload")) {
+    return "Upload Notes";
+  }
+
+  if (pathname.startsWith("/explore")) {
+    return "Explore";
+  }
+
+  if (pathname.startsWith("/dashboard")) {
+    return "Dashboard";
+  }
+
+  if (pathname.startsWith("/profile")) {
+    return "My Profile";
+  }
+
+  if (pathname.startsWith("/admin-login")) {
+    return "Admin Login";
+  }
+
+  if (pathname.startsWith("/admin")) {
+    return "Admin";
+  }
+
+  if (pathname.startsWith("/forgot-password")) {
+    return "Forgot Password";
+  }
+
+  if (pathname.startsWith("/reset-password")) {
+    return "Reset Password";
+  }
+
+  if (pathname.startsWith("/auth")) {
+    return "Login";
+  }
+
+  return "Home";
 }
