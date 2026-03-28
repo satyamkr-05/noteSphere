@@ -33,6 +33,7 @@ export default function ProfilePage({ showToast }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [previewNote, setPreviewNote] = useState(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isRemovingAvatar, setIsRemovingAvatar] = useState(false);
   const fileInputRef = useRef(null);
 
   useReveal([notes.length, currentPage]);
@@ -95,6 +96,26 @@ export default function ProfilePage({ showToast }) {
     }
   }
 
+  async function handleRemoveAvatar() {
+    if (!profileUser?.avatarUrl) {
+      return;
+    }
+
+    try {
+      setIsRemovingAvatar(true);
+      const payload = new FormData();
+      payload.append("removeAvatar", "true");
+      const response = await api.put("/users/me", payload);
+      setProfileUser(response.data.user);
+      updateCurrentUser(response.data.user);
+      showToast("Profile picture removed successfully.", "success");
+    } catch (error) {
+      showToast(getErrorMessage(error, "Unable to remove your profile picture."), "error");
+    } finally {
+      setIsRemovingAvatar(false);
+    }
+  }
+
   const memberSince = useMemo(() => {
     if (!profileUser?.createdAt) {
       return "Recently joined";
@@ -139,10 +160,20 @@ export default function ProfilePage({ showToast }) {
                 type="button"
                 className="btn btn--primary btn--full"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={isUploadingAvatar}
+                disabled={isUploadingAvatar || isRemovingAvatar}
               >
                 {isUploadingAvatar ? "Uploading..." : "Upload Profile Picture"}
               </button>
+              {profileUser?.avatarUrl ? (
+                <button
+                  type="button"
+                  className="btn btn--secondary btn--full"
+                  onClick={handleRemoveAvatar}
+                  disabled={isUploadingAvatar || isRemovingAvatar}
+                >
+                  {isRemovingAvatar ? "Removing..." : "Remove Profile Picture"}
+                </button>
+              ) : null}
             </div>
           </aside>
 

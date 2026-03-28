@@ -78,6 +78,10 @@ export const getMyProfile = asyncHandler(async (req, res) => {
 
 export const updateMyProfile = asyncHandler(async (req, res) => {
   const nextName = typeof req.body.name === "string" ? req.body.name.trim() : "";
+  const shouldRemoveAvatar =
+    req.body.removeAvatar === true ||
+    req.body.removeAvatar === "true" ||
+    req.body.removeAvatar === "1";
 
   if (nextName) {
     if (nextName.length > 60) {
@@ -86,6 +90,11 @@ export const updateMyProfile = asyncHandler(async (req, res) => {
     }
 
     req.user.name = nextName;
+  }
+
+  if (shouldRemoveAvatar && req.user.avatarPath) {
+    removeAvatarFile(req.user.avatarPath);
+    req.user.avatarPath = "";
   }
 
   if (req.file) {
