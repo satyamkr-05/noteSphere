@@ -259,18 +259,18 @@ body.dark-theme .logo__text-note {
 
 .logo__text-sphere {
   margin-left: 0.08rem;
-  padding: 0.12rem 0.14rem 0.18rem 0.04rem;
+  padding: 0.22rem 0.14rem 0.16rem 0.04rem;
   font-family: "Great Vibes", cursive;
   font-size: 2.45rem;
   font-weight: 400;
-  line-height: 0.94;
+  line-height: 1.02;
   letter-spacing: 0;
   background: linear-gradient(90deg, #cc1495 0%, #7e19d9 54%, #2a66ff 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   text-shadow: 0 10px 24px rgba(110, 92, 235, 0.18);
-  transform: translateY(0.04rem);
+  transform: translateY(0);
 }
 
 body.dark-theme .logo__text-sphere {
@@ -1821,10 +1821,10 @@ body.dark-theme .admin-select {
 
   .logo__text-sphere {
     font-size: 1.95rem;
-    line-height: 0.96;
+    line-height: 1;
     margin-left: 0.04rem;
-    padding: 0.1rem 0.08rem 0.14rem 0.02rem;
-    transform: translateY(0.03rem);
+    padding: 0.18rem 0.08rem 0.12rem 0.02rem;
+    transform: translateY(0);
   }
 
   .nav-toggle {
