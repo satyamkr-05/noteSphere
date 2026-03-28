@@ -1,5 +1,6 @@
-import { useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import NotePreviewModal from "../components/NotePreviewModal";
+import PaginationControls from "../components/PaginationControls";
 import api, { getErrorMessage } from "../services/api";
 import { useReveal } from "../components/useReveal";
 import {
@@ -21,18 +22,54 @@ const initialForm = {
   featured: false
 };
 
+const initialPagination = {
+  currentPage: 1,
+  limit: 6,
+  totalItems: 0,
+  totalPages: 1,
+  hasPreviousPage: false,
+  hasNextPage: false
+};
+
 export default function UploadPage({ onNotesChanged, showToast }) {
   const [form, setForm] = useState(initialForm);
   const [file, setFile] = useState(null);
   const [fileLabel, setFileLabel] = useState("Choose a file or drag it here");
+  const [editingId, setEditingId] = useState("");
+  const [myNotes, setMyNotes] = useState([]);
+  const [pagination, setPagination] = useState(initialPagination);
+  const [currentPage, setCurrentPage] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
+  const [previewNote, setPreviewNote] = useState(null);
   const fileInputRef = useRef(null);
 
-  useReveal([isSaving]);
+  useReveal([isSaving, myNotes.length, editingId]);
+
+  useEffect(() => {
+    loadMyNotes(currentPage);
+  }, [currentPage]);
+
+  async function loadMyNotes(pageToLoad = currentPage) {
+    try {
+      const response = await api.get("/notes/mine", {
+        params: {
+          page: pageToLoad,
+          limit: initialPagination.limit
+        }
+      });
+      setMyNotes(response.data.notes || []);
+      setPagination(response.data.pagination || initialPagination);
+    } catch (error) {
+      setMyNotes([]);
+      setPagination(initialPagination);
+      showToast(getErrorMessage(error, "Unable to load your uploaded notes."), "error");
+    }
+  }
 
   function resetForm() {
     setForm(initialForm);
     setFile(null);
+    setEditingId("");
     setFileLabel("Choose a file or drag it here");
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -45,7 +82,7 @@ export default function UploadPage({ onNotesChanged, showToast }) {
 
     if (fileError) {
       setFile(null);
-      setFileLabel("Choose a file or drag it here");
+      setFileLabel(editingId ? fileLabel : "Choose a file or drag it here");
       event.target.value = "";
       showToast(fileError, "error");
       return;
@@ -64,10 +101,18 @@ export default function UploadPage({ onNotesChanged, showToast }) {
       return;
     }
 
-    const fileError = validateNoteFile(file);
-    if (fileError) {
-      showToast(fileError, "error");
-      return;
+    if (!editingId) {
+      const fileError = validateNoteFile(file);
+      if (fileError) {
+        showToast(fileError, "error");
+        return;
+      }
+    } else if (file) {
+      const fileError = validateNoteFile(file);
+      if (fileError) {
+        showToast(fileError, "error");
+        return;
+      }
     }
 
     const payload = new FormData();
@@ -81,14 +126,49 @@ export default function UploadPage({ onNotesChanged, showToast }) {
 
     try {
       setIsSaving(true);
-      await api.post("/notes", payload);
-      showToast("Your note is uploaded.", "success");
+
+      if (editingId) {
+        await api.put(`/notes/${editingId}`, payload);
+        showToast("Note updated successfully.", "success");
+      } else {
+        await api.post("/notes", payload);
+        showToast("Your note is uploaded.", "success");
+      }
+
       resetForm();
+      await loadMyNotes(currentPage);
       onNotesChanged();
     } catch (error) {
-      showToast(getErrorMessage(error, "Unable to save this note."), "error");
+      showToast(getErrorMessage(error, editingId ? "Unable to update this note." : "Unable to save this note."), "error");
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  function startEditing(note) {
+    setEditingId(note.id);
+    setForm({
+      title: note.title,
+      subject: note.subject,
+      description: note.description,
+      featured: note.featured
+    });
+    setFile(null);
+    setFileLabel(note.fileName);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function handleDelete(noteId) {
+    try {
+      await api.delete(`/notes/${noteId}`);
+      showToast("Note deleted successfully.", "success");
+      if (editingId === noteId) {
+        resetForm();
+      }
+      await loadMyNotes(currentPage);
+      onNotesChanged();
+    } catch (error) {
+      showToast(getErrorMessage(error, "Unable to delete this note."), "error");
     }
   }
 
@@ -98,32 +178,45 @@ export default function UploadPage({ onNotesChanged, showToast }) {
         <div className="split-layout">
           <div className="split-layout__intro reveal">
             <span className="eyebrow">Upload Notes</span>
-            <h2>Share a new note in a focused upload flow</h2>
+            <h2>Upload new notes and edit your own library from one place</h2>
             <p>
-              Add a title, subject, description, and note file to publish a new resource for
-              other learners right away.
+              Share a new note, or tap the small pencil icon on any note below to edit only
+              the notes you uploaded yourself.
             </p>
 
             <div className="info-stack">
               <article className="info-card glass-card">
                 <i className="fa-solid fa-upload"></i>
                 <div>
-                  <h3>Quick publishing</h3>
-                  <p>Upload a note in minutes with a simple, distraction-free form.</p>
+                  <h3>{editingId ? "Edit mode is active" : "Quick publishing"}</h3>
+                  <p>
+                    {editingId
+                      ? "Update the selected note here and save the new details."
+                      : "Upload a note in minutes with a simple, distraction-free form."}
+                  </p>
                 </div>
               </article>
               <article className="info-card glass-card">
-                <i className="fa-solid fa-table-list"></i>
+                <i className="fa-solid fa-pen-to-square"></i>
                 <div>
-                  <h3>Need to manage notes?</h3>
-                  <p>Use your dashboard to review uploads, edit details, preview files, and delete notes.</p>
-                  <Link to="/dashboard" className="text-link">Open Dashboard</Link>
+                  <h3>Edit only your own notes</h3>
+                  <p>Each uploaded note has a small pencil action so the edit flow stays neat and direct.</p>
                 </div>
               </article>
             </div>
           </div>
 
           <form className="upload-form glass-card reveal" onSubmit={handleSubmit}>
+            <div className="section-heading dashboard-editor__heading">
+              <span className="eyebrow">{editingId ? "Edit Note" : "Upload Note"}</span>
+              <h2>{editingId ? "Update selected note" : "Share a new note"}</h2>
+              <p>
+                {editingId
+                  ? "Make changes below. You can keep the current file or replace it."
+                  : "Add a title, subject, description, and note file to publish a new resource."}
+              </p>
+            </div>
+
             <div className="form-group">
               <label htmlFor="noteTitle">Note Title</label>
               <input
@@ -184,7 +277,7 @@ export default function UploadPage({ onNotesChanged, showToast }) {
             </div>
 
             <div className="form-group">
-              <label htmlFor="noteFile">Upload File</label>
+              <label htmlFor="noteFile">{editingId ? "Replace File" : "Upload File"}</label>
               <label className="file-dropzone" htmlFor="noteFile">
                 <input
                   ref={fileInputRef}
@@ -192,22 +285,89 @@ export default function UploadPage({ onNotesChanged, showToast }) {
                   id="noteFile"
                   accept={NOTE_FILE_ACCEPT}
                   onChange={handleFileChange}
-                  required
+                  required={!editingId}
                 />
                 <i className="fa-solid fa-file-arrow-up"></i>
                 <span>{fileLabel}</span>
-                <small>Accepted: {NOTE_FILE_TYPES_LABEL}. Max size: {NOTE_FILE_SIZE_LABEL}.</small>
+                <small>
+                  {editingId
+                    ? `Leave empty to keep the current file. Accepted: ${NOTE_FILE_TYPES_LABEL}. Max size: ${NOTE_FILE_SIZE_LABEL}.`
+                    : `Accepted: ${NOTE_FILE_TYPES_LABEL}. Max size: ${NOTE_FILE_SIZE_LABEL}.`}
+                </small>
               </label>
             </div>
 
             <div className="form-actions">
               <button type="submit" className="btn btn--primary btn--full" disabled={isSaving}>
-                <i className="fa-solid fa-upload"></i>
-                {isSaving ? "Saving..." : "Share Note"}
+                <i className={`fa-solid ${editingId ? "fa-floppy-disk" : "fa-upload"}`}></i>
+                {isSaving ? "Saving..." : editingId ? "Update Note" : "Share Note"}
               </button>
+              {editingId ? (
+                <button type="button" className="btn btn--secondary btn--full" onClick={resetForm}>
+                  Cancel Edit
+                </button>
+              ) : null}
             </div>
           </form>
         </div>
+
+        <section className="section section--compact">
+          <div className="section-heading reveal">
+            <span className="eyebrow">My Uploads</span>
+            <h2>Edit your own uploaded notes</h2>
+            <p>Only your notes appear here, and each card has a compact pencil icon for editing.</p>
+          </div>
+
+          <div className="notes-grid notes-grid--compact">
+            {myNotes.map((note) => (
+              <article key={note.id} className="note-card glass-card reveal is-visible">
+                <div className="note-card__topbar">
+                  <span className="note-card__chip">{note.subject}</span>
+                  <button
+                    type="button"
+                    className="note-card__icon-action"
+                    onClick={() => startEditing(note)}
+                    aria-label={`Edit ${note.title}`}
+                    title="Edit note"
+                  >
+                    <i className="fa-solid fa-pen"></i>
+                  </button>
+                </div>
+                <h3>{note.title}</h3>
+                <p>{note.description}</p>
+                <div className="note-card__meta">
+                  <span><i className="fa-solid fa-file-lines"></i> {note.fileName}</span>
+                  <span><i className="fa-solid fa-download"></i> {note.downloads}</span>
+                </div>
+                <div className="note-card__meta">
+                  <span className={`status-badge status-badge--${note.status || "pending"}`}>
+                    {note.status || "pending"}
+                  </span>
+                </div>
+                <div className="note-card__actions">
+                  <div className="note-card__buttons">
+                    <button type="button" className="btn btn--secondary" onClick={() => setPreviewNote(note)}>
+                      Preview
+                    </button>
+                    <button type="button" className="btn btn--primary" onClick={() => handleDelete(note.id)}>
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          {myNotes.length === 0 ? (
+            <p className="empty-state glass-card">You have not uploaded any notes yet.</p>
+          ) : null}
+
+          {myNotes.length > 0 ? (
+            <PaginationControls pagination={pagination} onPageChange={setCurrentPage} itemLabel="notes" />
+          ) : null}
+        </section>
+
+        <NotePreviewModal note={previewNote} onClose={() => setPreviewNote(null)} showToast={showToast} />
       </div>
     </section>
   );
