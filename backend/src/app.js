@@ -12,6 +12,7 @@ import feedbackRoutes from "./routes/feedbackRoutes.js";
 import noteRoutes from "./routes/noteRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import { errorHandler, notFound } from "./middleware/errorMiddleware.js";
+import { getReadinessState, isBackendReady } from "./state/readiness.js";
 
 dotenv.config();
 
@@ -41,7 +42,29 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/media/avatars", express.static(avatarDir));
 
 app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok" });
+  const readiness = getReadinessState();
+
+  res.json({
+    status: readiness.isReady ? "ok" : readiness.isInitializing ? "starting" : "degraded",
+    readiness
+  });
+});
+
+app.use("/api", (req, res, next) => {
+  if (req.path === "/health") {
+    next();
+    return;
+  }
+
+  if (!isBackendReady()) {
+    res.status(503).json({
+      success: false,
+      message: "The service is starting up. Please try again in a moment."
+    });
+    return;
+  }
+
+  next();
 });
 
 app.use("/api/auth", authRoutes);
