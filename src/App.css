@@ -229,21 +229,45 @@ body.dark-theme .navbar {
 .logo {
   display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
-  font-family: "Space Grotesk", sans-serif;
-  font-weight: 700;
-  letter-spacing: -0.03em;
+  gap: 0;
+  min-width: 0;
+  white-space: nowrap;
 }
 
-.logo__mark {
-  width: 2.7rem;
-  height: 2.7rem;
-  display: grid;
-  place-items: center;
-  border-radius: 16px;
-  background: linear-gradient(135deg, var(--primary), var(--secondary));
-  color: #fff;
-  box-shadow: 0 10px 24px rgba(91, 124, 255, 0.28);
+.logo__text {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.08rem;
+  line-height: 1;
+}
+
+.logo__text-note {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.08em;
+  color: var(--text);
+}
+
+.logo__text-sphere {
+  font-family: "Manrope", sans-serif;
+  font-size: 1.34rem;
+  font-weight: 800;
+  font-style: italic;
+  letter-spacing: -0.05em;
+  color: var(--primary-dark);
+ }
+
+body.dark-theme .logo__text-sphere {
+  color: #b7c7ff;
+}
+
+.logo--footer .logo__text-note {
+  font-size: 1.35rem;
+}
+
+.logo--footer .logo__text-sphere {
+  font-size: 1.24rem;
 }
 
 .nav-toggle {
@@ -1763,12 +1787,21 @@ body.dark-theme .admin-select {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     align-items: center;
+    column-gap: 0.55rem;
     padding: 0.9rem 1rem;
   }
 
   .logo {
     min-width: 0;
     justify-self: start;
+  }
+
+  .logo__text-note {
+    font-size: 1.2rem;
+  }
+
+  .logo__text-sphere {
+    font-size: 1.08rem;
   }
 
   .nav-toggle {
@@ -1781,6 +1814,7 @@ body.dark-theme .admin-select {
     display: flex;
     justify-content: flex-end;
     justify-self: end;
+    min-width: 2.8rem;
   }
 
   .mobile-header-spacer {
