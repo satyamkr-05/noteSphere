@@ -142,6 +142,16 @@ export default function Layout({ children, isDark, onLogout, onToggleTheme, show
           </div>
         </nav>
 
+        <NavLink
+          to="/"
+          className="floating-home-button nav-action-button"
+          aria-label="Go to home"
+          onClick={closeNav}
+        >
+          <i className="fa-solid fa-house"></i>
+          <span>Home</span>
+        </NavLink>
+
         <button
           type="button"
           className="floating-theme-toggle nav-action-button nav-theme-toggle nav-theme-toggle--desktop"

@@ -492,6 +492,25 @@ body.dark-theme .floating-theme-toggle {
   background: rgba(12, 23, 44, 0.92);
 }
 
+.floating-home-button {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 38;
+  padding: 0.9rem 1rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  box-shadow: var(--shadow);
+  color: var(--text);
+}
+
+body.dark-theme .floating-home-button {
+  background: rgba(12, 23, 44, 0.92);
+  border-color: rgba(138, 160, 255, 0.18);
+  color: #eef3ff;
+}
+
 .hero {
   display: grid;
   grid-template-columns: 1.1fr 0.9fr;
@@ -2134,6 +2153,14 @@ body.dark-theme .admin-select {
     display: none;
   }
 
+  .floating-home-button {
+    right: 0.85rem;
+    bottom: 0.85rem;
+    min-width: 2.9rem;
+    min-height: 2.9rem;
+    padding: 0.8rem 0.95rem;
+  }
+
   .hero {
     padding-top: 1.2rem;
   }
@@ -2195,6 +2222,10 @@ body.dark-theme .admin-select {
 
   .site-header {
     padding-top: 6rem;
+  }
+
+  .floating-home-button span {
+    display: none;
   }
 
   .hero h1 {
