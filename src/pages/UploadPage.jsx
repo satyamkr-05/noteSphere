@@ -179,10 +179,7 @@ export default function UploadPage({ onNotesChanged, showToast }) {
           <div className="split-layout__intro reveal">
             <span className="eyebrow">Upload Notes</span>
             <h2>Upload new notes and edit your own library from one place</h2>
-            <p>
-              Share a new note, or tap the small pencil icon on any note below to edit only
-              the notes you uploaded yourself.
-            </p>
+            <p>Upload a new note or update one of your existing notes.</p>
 
             <div className="info-stack">
               <article className="info-card glass-card">
@@ -194,13 +191,6 @@ export default function UploadPage({ onNotesChanged, showToast }) {
                       ? "Update the selected note here and save the new details."
                       : "Upload a note in minutes with a simple, distraction-free form."}
                   </p>
-                </div>
-              </article>
-              <article className="info-card glass-card">
-                <i className="fa-solid fa-pen-to-square"></i>
-                <div>
-                  <h3>Edit only your own notes</h3>
-                  <p>Each uploaded note has a small pencil action so the edit flow stays neat and direct.</p>
                 </div>
               </article>
             </div>
@@ -315,7 +305,6 @@ export default function UploadPage({ onNotesChanged, showToast }) {
           <div className="section-heading reveal">
             <span className="eyebrow">My Uploads</span>
             <h2>Edit your own uploaded notes</h2>
-            <p>Only your notes appear here, and each card has a compact pencil icon for editing.</p>
           </div>
 
           <div className="notes-grid notes-grid--compact">

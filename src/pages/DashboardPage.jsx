@@ -65,10 +65,7 @@ export default function DashboardPage({ onNotesChanged, showToast }) {
           <div className="split-layout__intro reveal">
             <span className="eyebrow">Dashboard</span>
             <h2>Review your uploaded notes in one clean space</h2>
-            <p>
-              Preview your files, track note status, and delete uploads when needed.
-              Editing now happens directly from the Upload Notes page.
-            </p>
+            <p>Preview your files, track note status, and delete uploads when needed.</p>
 
             <div className="info-stack">
               <article className="info-card glass-card">
@@ -78,23 +75,7 @@ export default function DashboardPage({ onNotesChanged, showToast }) {
                   <p>This dashboard stays focused on overview, preview, and cleanup.</p>
                 </div>
               </article>
-              <article className="info-card glass-card">
-                <i className="fa-solid fa-folder-open"></i>
-                <div>
-                  <h3>Clean note overview</h3>
-                  <p>Use Upload Notes when you want to edit a note, and use this page to monitor your library.</p>
-                </div>
-              </article>
             </div>
-          </div>
-
-          <div className="glass-card admin-info-card reveal is-visible">
-            <span className="eyebrow">Dashboard Focus</span>
-            <h3>No separate note editor here</h3>
-            <p>
-              The edit option has been moved out of dashboard to keep this page simpler.
-              Open Upload Notes and use the pencil icon on your note card whenever you want to edit.
-            </p>
           </div>
         </div>
 

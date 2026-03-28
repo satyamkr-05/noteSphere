@@ -133,10 +133,7 @@ export default function HomePage({ reloadKey, showToast }) {
         <div className="hero__content reveal">
           <span className="eyebrow">Where sharp notes meet smarter learning</span>
           <h1>Smarter notes, better study experience.</h1>
-          <p>
-            Sign up, upload your notes, and explore learning resources from real users
-            through a full-stack note sharing platform.
-          </p>
+          <p>Sign up, upload notes, and explore useful study material in one place.</p>
 
           <div className="hero__actions">
             <Link to="/upload" className="btn btn--primary">Upload Notes</Link>
