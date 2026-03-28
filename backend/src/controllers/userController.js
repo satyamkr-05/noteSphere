@@ -78,6 +78,15 @@ export const getMyProfile = asyncHandler(async (req, res) => {
 
 export const updateMyProfile = asyncHandler(async (req, res) => {
   const nextName = typeof req.body.name === "string" ? req.body.name.trim() : "";
+  const hasPhoneNumber = typeof req.body.phoneNumber === "string";
+  const nextPhoneNumber = hasPhoneNumber ? req.body.phoneNumber.trim() : "";
+  const hasLocation = typeof req.body.location === "string";
+  const nextLocation = hasLocation ? req.body.location.trim() : "";
+  const hasPreferredLanguage = typeof req.body.preferredLanguage === "string";
+  const nextPreferredLanguage = hasPreferredLanguage ? req.body.preferredLanguage.trim() : "";
+  const hasEmailNotifications =
+    typeof req.body.emailNotifications === "boolean" ||
+    typeof req.body.emailNotifications === "string";
   const shouldRemoveAvatar =
     req.body.removeAvatar === true ||
     req.body.removeAvatar === "true" ||
@@ -90,6 +99,40 @@ export const updateMyProfile = asyncHandler(async (req, res) => {
     }
 
     req.user.name = nextName;
+  }
+
+  if (hasPhoneNumber) {
+    if (nextPhoneNumber.length > 24) {
+      res.status(400);
+      throw new Error("Mobile number must be 24 characters or fewer.");
+    }
+
+    req.user.phoneNumber = nextPhoneNumber;
+  }
+
+  if (hasLocation) {
+    if (nextLocation.length > 60) {
+      res.status(400);
+      throw new Error("Location must be 60 characters or fewer.");
+    }
+
+    req.user.location = nextLocation;
+  }
+
+  if (hasPreferredLanguage) {
+    if (nextPreferredLanguage.length > 32) {
+      res.status(400);
+      throw new Error("Language must be 32 characters or fewer.");
+    }
+
+    req.user.preferredLanguage = nextPreferredLanguage || "English";
+  }
+
+  if (hasEmailNotifications) {
+    req.user.emailNotifications =
+      req.body.emailNotifications === true ||
+      req.body.emailNotifications === "true" ||
+      req.body.emailNotifications === "1";
   }
 
   if (shouldRemoveAvatar && req.user.avatarPath) {
