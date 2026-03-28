@@ -4,10 +4,24 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NoteSphere | Share &amp; Discover Notes</title>
+  <meta name="application-name" content="NoteSphere">
   <meta
     name="description"
-    content="A modern note sharing website to upload, explore, and discover study notes."
+    content="NoteSphere helps students upload, explore, and discover useful study notes in one place."
   >
+  <meta name="keywords" content="NoteSphere, study notes, notes sharing, upload notes, explore notes, student notes">
+  <meta name="author" content="NoteSphere">
+  <meta name="theme-color" content="#5b7cff">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://www.noteshapre.in/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="NoteSphere | Share &amp; Discover Notes">
+  <meta property="og:description" content="Upload, explore, and discover useful study notes with NoteSphere.">
+  <meta property="og:url" content="https://www.noteshapre.in/">
+  <meta property="og:site_name" content="NoteSphere">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="NoteSphere | Share &amp; Discover Notes">
+  <meta name="twitter:description" content="Upload, explore, and discover useful study notes with NoteSphere.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -20,6 +34,28 @@
     crossorigin="anonymous"
     referrerpolicy="no-referrer"
   >
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "name": "NoteSphere",
+          "url": "https://www.noteshapre.in/"
+        },
+        {
+          "@type": "WebSite",
+          "name": "NoteSphere",
+          "url": "https://www.noteshapre.in/",
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://www.noteshapre.in/explore?q={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        }
+      ]
+    }
+  </script>
 </head>
 <body>
   <div id="root"></div>

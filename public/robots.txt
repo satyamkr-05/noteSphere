@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin
+Disallow: /admin-login
+Disallow: /dashboard
+Disallow: /upload
+Disallow: /profile
+Disallow: /auth
+Disallow: /forgot-password
+Disallow: /reset-password
+
+Sitemap: https://www.noteshapre.in/sitemap.xml
