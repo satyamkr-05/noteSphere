@@ -234,48 +234,15 @@ body.dark-theme .navbar {
   white-space: nowrap;
 }
 
-.logo__text {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0;
-  line-height: 1;
+.logo__image {
+  display: block;
+  height: 3rem;
+  width: auto;
+  object-fit: contain;
 }
 
-.logo__text-note {
-  font-family: "Space Grotesk", sans-serif;
-  font-size: 1.45rem;
-  font-weight: 700;
-  letter-spacing: -0.08em;
-  color: var(--text);
-  position: relative;
-  z-index: 1;
-}
-
-.logo__text-sphere {
-  margin-left: -0.04rem;
-  font-family: "Allura", cursive;
-  font-size: 2.12rem;
-  font-weight: 400;
-  line-height: 0.72;
-  letter-spacing: 0;
-  background: linear-gradient(90deg, #d10da5 0%, #8f18d7 52%, #2668ff 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  text-shadow: 0 8px 22px rgba(95, 102, 255, 0.18);
-  transform: translateY(0.1rem);
-}
-
-body.dark-theme .logo__text-sphere {
-  text-shadow: 0 8px 24px rgba(79, 133, 255, 0.3);
-}
-
-.logo--footer .logo__text-note {
-  font-size: 1.35rem;
-}
-
-.logo--footer .logo__text-sphere {
-  font-size: 1.9rem;
+.logo--footer .logo__image {
+  height: 2.7rem;
 }
 
 .nav-toggle {
@@ -1804,13 +1771,8 @@ body.dark-theme .admin-select {
     justify-self: start;
   }
 
-  .logo__text-note {
-    font-size: 1.1rem;
-  }
-
-  .logo__text-sphere {
-    font-size: 1.78rem;
-    transform: translateY(0.08rem);
+  .logo__image {
+    height: 2.4rem;
   }
 
   .nav-toggle {

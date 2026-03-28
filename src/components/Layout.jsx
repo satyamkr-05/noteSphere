@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import logo from "../assets/logo.svg";
 
 export default function Layout({ children, isDark, onLogout, onToggleTheme, showToast }) {
   const [navOpen, setNavOpen] = useState(false);
@@ -91,10 +92,7 @@ export default function Layout({ children, isDark, onLogout, onToggleTheme, show
       <header className="site-header">
         <nav className="navbar container" aria-label="Primary">
           <NavLink to="/" className="logo" aria-label="NoteSphere Home" onClick={closeNav}>
-            <span className="logo__text">
-              <span className="logo__text-note">Note</span>
-              <span className="logo__text-sphere">Sphere</span>
-            </span>
+            <img src={logo} alt="NoteSphere" className="logo__image" />
           </NavLink>
 
           <button
@@ -157,10 +155,7 @@ export default function Layout({ children, isDark, onLogout, onToggleTheme, show
           <div className="footer-main">
             <div>
               <NavLink to="/" className="logo logo--footer">
-                <span className="logo__text">
-                  <span className="logo__text-note">Note</span>
-                  <span className="logo__text-sphere">Sphere</span>
-                </span>
+                <img src={logo} alt="NoteSphere" className="logo__image" />
               </NavLink>
               <p>A modern note sharing experience for focused learners.</p>
             </div>
