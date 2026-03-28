@@ -47,10 +47,7 @@ function AppContent({ isDark, onToggleTheme, reloadKey, showToast, triggerReload
         <Route element={<ProtectedRoute />}>
           <Route path="/upload" element={<UploadPage onNotesChanged={triggerReload} showToast={showToast} />} />
           <Route path="/dashboard" element={<DashboardPage onNotesChanged={triggerReload} showToast={showToast} />} />
-          <Route
-            path="/profile"
-            element={<ProfilePage showToast={showToast} isDark={isDark} onToggleTheme={onToggleTheme} />}
-          />
+          <Route path="/profile" element={<ProfilePage showToast={showToast} />} />
         </Route>
         <Route element={<AdminRoute />}>
           <Route path="/admin" element={<AdminPage onNotesChanged={triggerReload} showToast={showToast} />} />

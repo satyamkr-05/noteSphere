@@ -16,25 +16,6 @@ const userSchema = new mongoose.Schema(
       trim: true,
       lowercase: true
     },
-    phoneNumber: {
-      type: String,
-      trim: true,
-      default: ""
-    },
-    location: {
-      type: String,
-      trim: true,
-      default: ""
-    },
-    preferredLanguage: {
-      type: String,
-      trim: true,
-      default: "English"
-    },
-    emailNotifications: {
-      type: Boolean,
-      default: true
-    },
     avatarPath: {
       type: String,
       default: ""
