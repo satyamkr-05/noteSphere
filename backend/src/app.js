@@ -5,9 +5,11 @@ import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 import { getAllowedOrigins } from "./config/runtime.js";
+import { avatarDir } from "./config/runtime.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import noteRoutes from "./routes/noteRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 import { errorHandler, notFound } from "./middleware/errorMiddleware.js";
 
 dotenv.config();
@@ -35,6 +37,7 @@ app.use(
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use("/media/avatars", express.static(avatarDir));
 
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok" });
@@ -43,6 +46,7 @@ app.get("/api/health", (_req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/notes", noteRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/users", userRoutes);
 
 app.use("/api", notFound);
 

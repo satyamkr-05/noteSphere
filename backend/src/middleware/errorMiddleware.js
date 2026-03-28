@@ -62,6 +62,13 @@ function normalizeError(error, fallbackStatusCode) {
     };
   }
 
+  if (error.message === "Profile picture must be a PNG, JPG, JPEG, or WEBP image.") {
+    return {
+      statusCode: 400,
+      message: error.message
+    };
+  }
+
   if (error.name === "JsonWebTokenError" || error.name === "TokenExpiredError") {
     return {
       statusCode: 401,

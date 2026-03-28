@@ -14,6 +14,7 @@ export const uploadDir = configuredUploadDir
   : isVercel
     ? path.join("/tmp", "notesphere-uploads")
     : path.join(process.cwd(), "backend", "uploads");
+export const avatarDir = path.join(uploadDir, "avatars");
 
 export function getAllowedOrigins() {
   const configuredOrigins = getConfiguredClientOrigins();

@@ -1,17 +1,31 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function Layout({ children, isDark, onLogout, onToggleTheme, showToast }) {
   const [navOpen, setNavOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef(null);
   const { isAuthenticated, user } = useAuth();
 
   useEffect(() => {
     document.body.classList.toggle("menu-open", navOpen);
   }, [navOpen]);
 
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (!profileMenuRef.current?.contains(event.target)) {
+        setProfileMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   function closeNav() {
     setNavOpen(false);
+    setProfileMenuOpen(false);
   }
 
   return (
@@ -55,10 +69,50 @@ export default function Layout({ children, isDark, onLogout, onToggleTheme, show
               <span>{isDark ? "Light" : "Dark"}</span>
             </button>
             {isAuthenticated ? (
-              <button type="button" className="nav-action-button" onClick={() => { onLogout(); closeNav(); }}>
-                <i className="fa-solid fa-right-from-bracket"></i>
-                <span>{user?.name || "Logout"}</span>
-              </button>
+              <div className={`profile-menu${profileMenuOpen ? " is-open" : ""}`} ref={profileMenuRef}>
+                <button
+                  type="button"
+                  className="profile-trigger"
+                  aria-haspopup="menu"
+                  aria-expanded={profileMenuOpen}
+                  onClick={() => setProfileMenuOpen((current) => !current)}
+                >
+                  {user?.avatarUrl ? (
+                    <img src={user.avatarUrl} alt={user.name} className="profile-trigger__avatar" />
+                  ) : (
+                    <span className="profile-trigger__avatar profile-trigger__avatar--fallback">
+                      {getInitials(user?.name)}
+                    </span>
+                  )}
+                  <span className="profile-trigger__copy">
+                    <strong>{user?.name || "Profile"}</strong>
+                    <small>{user?.email}</small>
+                  </span>
+                  <i className={`fa-solid ${profileMenuOpen ? "fa-chevron-up" : "fa-chevron-down"}`}></i>
+                </button>
+
+                <div className="profile-dropdown glass-card" role="menu">
+                  <NavLink to="/profile" className="profile-dropdown__link" onClick={closeNav}>
+                    <i className="fa-regular fa-user"></i>
+                    <span>My Profile</span>
+                  </NavLink>
+                  <NavLink to="/dashboard" className="profile-dropdown__link" onClick={closeNav}>
+                    <i className="fa-regular fa-note-sticky"></i>
+                    <span>My Dashboard</span>
+                  </NavLink>
+                  <button
+                    type="button"
+                    className="profile-dropdown__link"
+                    onClick={() => {
+                      onLogout();
+                      closeNav();
+                    }}
+                  >
+                    <i className="fa-solid fa-right-from-bracket"></i>
+                    <span>Logout</span>
+                  </button>
+                </div>
+              </div>
             ) : null}
           </div>
         </nav>
@@ -114,4 +168,13 @@ export default function Layout({ children, isDark, onLogout, onToggleTheme, show
       </footer>
     </div>
   );
+}
+
+function getInitials(name = "") {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || "")
+    .join("") || "NS";
 }

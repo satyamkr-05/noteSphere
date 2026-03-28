@@ -4,6 +4,7 @@ import { getPrimaryClientUrl, isAdminEmail } from "../config/runtime.js";
 import { createToken } from "../utils/createToken.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { isMailConfigured, sendPasswordResetEmail } from "../utils/sendEmail.js";
+import { serializeUser } from "../utils/serializeUser.js";
 
 function normalizeName(value = "") {
   return value.trim();
@@ -34,15 +35,6 @@ function createPasswordResetState() {
     rawToken,
     hashedToken,
     expiresAt: new Date(Date.now() + getPasswordResetWindowMs())
-  };
-}
-
-function serializeUser(user) {
-  return {
-    id: user._id,
-    name: user.name,
-    email: user.email,
-    isAdmin: isAdminEmail(user.email)
   };
 }
 

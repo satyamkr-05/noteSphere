@@ -26,6 +26,17 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(getStoredUser);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
 
+  function persistUser(nextUser) {
+    setUser(nextUser);
+
+    if (nextUser) {
+      localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
+      return;
+    }
+
+    localStorage.removeItem(USER_KEY);
+  }
+
   useEffect(() => {
     async function hydrateUser() {
       if (!token) {
@@ -35,8 +46,7 @@ export function AuthProvider({ children }) {
 
       try {
         const response = await api.get("/auth/me");
-        setUser(response.data.user);
-        localStorage.setItem(USER_KEY, JSON.stringify(response.data.user));
+        persistUser(response.data.user);
       } catch {
         localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(USER_KEY);
@@ -65,28 +75,40 @@ export function AuthProvider({ children }) {
   async function signup(payload) {
     const response = await api.post("/auth/signup", payload);
     setToken(response.data.token);
-    setUser(response.data.user);
+    persistUser(response.data.user);
     localStorage.setItem(TOKEN_KEY, response.data.token);
-    localStorage.setItem(USER_KEY, JSON.stringify(response.data.user));
     return response.data;
   }
 
   async function login(payload) {
     const response = await api.post("/auth/login", payload);
     setToken(response.data.token);
-    setUser(response.data.user);
+    persistUser(response.data.user);
     localStorage.setItem(TOKEN_KEY, response.data.token);
-    localStorage.setItem(USER_KEY, JSON.stringify(response.data.user));
     return response.data;
   }
 
   async function loginAdmin(payload) {
     const response = await api.post("/admin/login", payload);
     setToken(response.data.token);
-    setUser(response.data.user);
+    persistUser(response.data.user);
     localStorage.setItem(TOKEN_KEY, response.data.token);
-    localStorage.setItem(USER_KEY, JSON.stringify(response.data.user));
     return response.data;
+  }
+
+  async function refreshUser() {
+    if (!token) {
+      persistUser(null);
+      return null;
+    }
+
+    const response = await api.get("/auth/me");
+    persistUser(response.data.user);
+    return response.data.user;
+  }
+
+  function updateCurrentUser(nextUser) {
+    persistUser(nextUser);
   }
 
   function logout() {
@@ -106,7 +128,9 @@ export function AuthProvider({ children }) {
         login,
         loginAdmin,
         logout,
-        signup
+        refreshUser,
+        signup,
+        updateCurrentUser
       }}
     >
       {children}

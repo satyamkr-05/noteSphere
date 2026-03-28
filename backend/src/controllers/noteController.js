@@ -1,4 +1,5 @@
 import Note from "../models/Note.js";
+import DownloadRecord from "../models/DownloadRecord.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import {
   buildStoredFileAbsolutePath,
@@ -349,7 +350,13 @@ export const registerDownload = asyncHandler(async (req, res) => {
 
   if (note.status === "approved") {
     note.downloads += 1;
-    await note.save();
+    await Promise.all([
+      note.save(),
+      DownloadRecord.create({
+        user: req.user._id,
+        note: note._id
+      })
+    ]);
   }
 
   sendNoteFileResponse(res, note, "attachment");

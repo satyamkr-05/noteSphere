@@ -10,6 +10,7 @@ import AdminLoginPage from "./pages/AdminLoginPage";
 import AdminPage from "./pages/AdminPage";
 import HomePage from "./pages/HomePage";
 import ExplorePage from "./pages/ExplorePage";
+import ProfilePage from "./pages/ProfilePage";
 import UploadPage from "./pages/UploadPage";
 import AuthPage from "./pages/AuthPage";
 import DashboardPage from "./pages/DashboardPage";
@@ -46,6 +47,7 @@ function AppContent({ isDark, onToggleTheme, reloadKey, showToast, triggerReload
         <Route element={<ProtectedRoute />}>
           <Route path="/upload" element={<UploadPage onNotesChanged={triggerReload} showToast={showToast} />} />
           <Route path="/dashboard" element={<DashboardPage onNotesChanged={triggerReload} showToast={showToast} />} />
+          <Route path="/profile" element={<ProfilePage showToast={showToast} />} />
         </Route>
         <Route element={<AdminRoute />}>
           <Route path="/admin" element={<AdminPage onNotesChanged={triggerReload} showToast={showToast} />} />
