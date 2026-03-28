@@ -1,11 +1,14 @@
 import express from "express";
 import {
   approveNote,
+  deleteAdminFeedback,
   deleteAdminNote,
   deleteAdminUser,
+  getAdminFeedback,
   getAdminNotes,
   getAdminUsers,
   loginAdmin,
+  markFeedbackReviewed,
   rejectNote,
   updateAdminNote
 } from "../controllers/adminController.js";
@@ -24,5 +27,8 @@ router.put("/notes/:id/reject", rejectNote);
 router.delete("/notes/:id", deleteAdminNote);
 router.get("/users", getAdminUsers);
 router.delete("/users/:id", deleteAdminUser);
+router.get("/feedback", getAdminFeedback);
+router.put("/feedback/:id/review", markFeedbackReviewed);
+router.delete("/feedback/:id", deleteAdminFeedback);
 
 export default router;

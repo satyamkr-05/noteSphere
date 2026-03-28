@@ -28,6 +28,12 @@ const initialUsersSummary = {
   activeUploaders: 0
 };
 
+const initialFeedbackSummary = {
+  totalMessages: 0,
+  newMessages: 0,
+  reviewedMessages: 0
+};
+
 const initialPagination = {
   currentPage: 1,
   limit: 12,
@@ -46,22 +52,28 @@ export default function AdminPage({ onNotesChanged, showToast }) {
   const { user } = useAuth();
   const [notes, setNotes] = useState([]);
   const [users, setUsers] = useState([]);
+  const [feedback, setFeedback] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [feedbackSearchQuery, setFeedbackSearchQuery] = useState("");
   const [isNotesLoading, setIsNotesLoading] = useState(true);
   const [isUsersLoading, setIsUsersLoading] = useState(true);
+  const [isFeedbackLoading, setIsFeedbackLoading] = useState(true);
   const [editingNoteId, setEditingNoteId] = useState("");
   const [form, setForm] = useState(initialForm);
   const [isSaving, setIsSaving] = useState(false);
   const [previewNote, setPreviewNote] = useState(null);
   const [notesSummary, setNotesSummary] = useState(initialNotesSummary);
   const [usersSummary, setUsersSummary] = useState(initialUsersSummary);
+  const [feedbackSummary, setFeedbackSummary] = useState(initialFeedbackSummary);
   const [notesPagination, setNotesPagination] = useState(initialPagination);
   const [usersPagination, setUsersPagination] = useState(initialUserPagination);
+  const [feedbackPagination, setFeedbackPagination] = useState(initialUserPagination);
   const [notesPage, setNotesPage] = useState(1);
   const [usersPage, setUsersPage] = useState(1);
+  const [feedbackPage, setFeedbackPage] = useState(1);
 
-  useReveal([notes.length, users.length, editingNoteId]);
+  useReveal([notes.length, users.length, feedback.length, editingNoteId]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -78,6 +90,14 @@ export default function AdminPage({ onNotesChanged, showToast }) {
 
     return () => window.clearTimeout(timer);
   }, [userSearchQuery, usersPage]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      loadFeedback(feedbackPage);
+    }, 250);
+
+    return () => window.clearTimeout(timer);
+  }, [feedbackSearchQuery, feedbackPage]);
 
   async function loadNotes(pageToLoad = notesPage) {
     try {
@@ -128,6 +148,32 @@ export default function AdminPage({ onNotesChanged, showToast }) {
       showToast(getErrorMessage(error, "Unable to load user accounts."), "error");
     } finally {
       setIsUsersLoading(false);
+    }
+  }
+
+  async function loadFeedback(pageToLoad = feedbackPage) {
+    try {
+      setIsFeedbackLoading(true);
+      const response = await api.get("/admin/feedback", {
+        params: {
+          ...(feedbackSearchQuery ? { search: feedbackSearchQuery } : {}),
+          page: pageToLoad,
+          limit: initialUserPagination.limit
+        }
+      });
+      setFeedback(response.data.feedback || []);
+      setFeedbackSummary(response.data.summary || initialFeedbackSummary);
+      setFeedbackPagination(response.data.pagination || initialUserPagination);
+      if (response.data.pagination?.currentPage && response.data.pagination.currentPage !== pageToLoad) {
+        setFeedbackPage(response.data.pagination.currentPage);
+      }
+    } catch (error) {
+      setFeedback([]);
+      setFeedbackSummary(initialFeedbackSummary);
+      setFeedbackPagination(initialUserPagination);
+      showToast(getErrorMessage(error, "Unable to load feedback inbox."), "error");
+    } finally {
+      setIsFeedbackLoading(false);
     }
   }
 
@@ -208,6 +254,30 @@ export default function AdminPage({ onNotesChanged, showToast }) {
     }
   }
 
+  async function handleMarkFeedbackReviewed(feedbackId) {
+    try {
+      await api.put(`/admin/feedback/${feedbackId}/review`);
+      showToast("Feedback marked as reviewed.", "success");
+      await loadFeedback(feedbackPage);
+    } catch (error) {
+      showToast(getErrorMessage(error, "Unable to update this feedback item."), "error");
+    }
+  }
+
+  async function handleDeleteFeedback(feedbackId) {
+    if (!window.confirm("Delete this feedback message permanently?")) {
+      return;
+    }
+
+    try {
+      await api.delete(`/admin/feedback/${feedbackId}`);
+      showToast("Feedback deleted successfully.", "success");
+      await loadFeedback(feedbackPage);
+    } catch (error) {
+      showToast(getErrorMessage(error, "Unable to delete this feedback item."), "error");
+    }
+  }
+
   return (
     <section className="section">
       <div className="container">
@@ -252,6 +322,14 @@ export default function AdminPage({ onNotesChanged, showToast }) {
               <article className="stat-card glass-card">
                 <strong>{usersSummary.activeUploaders}</strong>
                 <span>Active Uploaders</span>
+              </article>
+              <article className="stat-card glass-card">
+                <strong>{feedbackSummary.totalMessages}</strong>
+                <span>Inbox Messages</span>
+              </article>
+              <article className="stat-card glass-card">
+                <strong>{feedbackSummary.newMessages}</strong>
+                <span>New Messages</span>
               </article>
             </div>
           </div>
@@ -422,6 +500,106 @@ export default function AdminPage({ onNotesChanged, showToast }) {
               pagination={notesPagination}
               onPageChange={setNotesPage}
               itemLabel="notes"
+            />
+          ) : null}
+        </section>
+
+        <section className="section section--compact">
+          <div className="section-heading reveal">
+            <span className="eyebrow">Feedback Inbox</span>
+            <h2>Queries, bugs, and feature requests</h2>
+            <p>Review user messages from the homepage feedback form in one place.</p>
+          </div>
+
+          <div className="explore-toolbar glass-card reveal">
+            <div className="search-field">
+              <i className="fa-solid fa-magnifying-glass"></i>
+              <input
+                type="text"
+                placeholder="Search by name, email, type, or message"
+                value={feedbackSearchQuery}
+                onChange={(event) => {
+                  setFeedbackSearchQuery(event.target.value);
+                  setFeedbackPage(1);
+                }}
+              />
+            </div>
+
+            <div className="admin-toolbar-actions">
+              <button
+                type="button"
+                className="btn btn--secondary"
+                onClick={() => {
+                  setFeedbackSearchQuery("");
+                  setFeedbackPage(1);
+                }}
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+
+          {isFeedbackLoading ? <div className="page-status glass-card">Loading feedback inbox...</div> : null}
+
+          <div className="admin-feedback-grid">
+            {feedback.map((entry) => (
+              <article key={entry.id} className="user-card glass-card reveal is-visible">
+                <div className="user-card__header">
+                  <div>
+                    <h3>{entry.name}</h3>
+                    <p>{entry.email}</p>
+                  </div>
+                  <span className={`status-badge status-badge--${entry.status === "reviewed" ? "approved" : "pending"}`}>
+                    {entry.status}
+                  </span>
+                </div>
+
+                <div className="note-card__meta">
+                  <span><i className="fa-regular fa-envelope"></i> {entry.type}</span>
+                  <span><i className="fa-regular fa-clock"></i> {formatDate(entry.createdAt)}</span>
+                </div>
+
+                <p className="feedback-card__message">{entry.message}</p>
+
+                {entry.submittedBy ? (
+                  <div className="user-card__meta">
+                    <span><i className="fa-regular fa-user"></i> Linked account: {entry.submittedBy.name}</span>
+                  </div>
+                ) : null}
+
+                <div className="note-card__actions">
+                  <div className="note-card__buttons">
+                    {entry.status !== "reviewed" ? (
+                      <button
+                        type="button"
+                        className="btn btn--secondary"
+                        onClick={() => handleMarkFeedbackReviewed(entry.id)}
+                      >
+                        Mark Reviewed
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      className="btn btn--primary"
+                      onClick={() => handleDeleteFeedback(entry.id)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          {!isFeedbackLoading && feedback.length === 0 ? (
+            <p className="empty-state glass-card">No feedback messages found.</p>
+          ) : null}
+
+          {!isFeedbackLoading && feedback.length > 0 ? (
+            <PaginationControls
+              pagination={feedbackPagination}
+              onPageChange={setFeedbackPage}
+              itemLabel="messages"
             />
           ) : null}
         </section>

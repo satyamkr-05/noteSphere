@@ -1,6 +1,7 @@
 import path from "path";
 import User from "../models/User.js";
 import Note from "../models/Note.js";
+import Feedback from "../models/Feedback.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { createToken } from "../utils/createToken.js";
 import {
@@ -93,6 +94,45 @@ function buildTextSearchFilter(search = "") {
   return {
     filter: { $text: { $search: normalizedSearch } },
     hasSearchQuery: true
+  };
+}
+
+function buildFeedbackSearchFilter(search = "") {
+  const normalizedSearch = search.trim();
+
+  if (!normalizedSearch) {
+    return {};
+  }
+
+  const regex = new RegExp(normalizedSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+
+  return {
+    $or: [
+      { name: regex },
+      { email: regex },
+      { message: regex },
+      { type: regex }
+    ]
+  };
+}
+
+function serializeFeedback(feedback) {
+  return {
+    id: feedback._id,
+    name: feedback.name,
+    email: feedback.email,
+    type: feedback.type,
+    message: feedback.message,
+    status: feedback.status,
+    submittedBy: feedback.submittedBy
+      ? {
+        id: feedback.submittedBy._id,
+        name: feedback.submittedBy.name,
+        email: feedback.submittedBy.email
+      }
+      : null,
+    createdAt: feedback.createdAt,
+    updatedAt: feedback.updatedAt
   };
 }
 
@@ -315,6 +355,68 @@ export const getAdminUsers = asyncHandler(async (req, res) => {
     }),
     pagination: serializePagination(pagination)
   });
+});
+
+export const getAdminFeedback = asyncHandler(async (req, res) => {
+  const { search = "", status = "" } = req.query;
+  const normalizedStatus = normalizeText(status).toLowerCase();
+  const requestedPagination = parsePagination(req.query, {
+    defaultLimit: 9,
+    maxLimit: 30
+  });
+  const filter = buildFeedbackSearchFilter(search);
+
+  if (normalizedStatus) {
+    filter.status = normalizedStatus;
+  }
+
+  const [totalItems, totalMessages, newMessages, reviewedMessages] = await Promise.all([
+    Feedback.countDocuments(filter),
+    Feedback.countDocuments({}),
+    Feedback.countDocuments({ status: "new" }),
+    Feedback.countDocuments({ status: "reviewed" })
+  ]);
+  const pagination = buildPagination(requestedPagination, totalItems);
+  const feedback = await Feedback.find(filter)
+    .populate("submittedBy", "name email")
+    .sort({ createdAt: -1 })
+    .skip(pagination.skip)
+    .limit(pagination.limit);
+
+  res.json({
+    summary: {
+      totalMessages,
+      newMessages,
+      reviewedMessages
+    },
+    feedback: feedback.map((entry) => serializeFeedback(entry)),
+    pagination: serializePagination(pagination)
+  });
+});
+
+export const markFeedbackReviewed = asyncHandler(async (req, res) => {
+  const feedback = await Feedback.findById(req.params.id).populate("submittedBy", "name email");
+
+  if (!feedback) {
+    throw new AppError("Feedback entry not found.", 404);
+  }
+
+  feedback.status = "reviewed";
+  await feedback.save();
+
+  res.json({ feedback: serializeFeedback(feedback) });
+});
+
+export const deleteAdminFeedback = asyncHandler(async (req, res) => {
+  const feedback = await Feedback.findById(req.params.id);
+
+  if (!feedback) {
+    throw new AppError("Feedback entry not found.", 404);
+  }
+
+  await feedback.deleteOne();
+
+  res.json({ message: "Feedback deleted successfully." });
 });
 
 export const deleteAdminUser = asyncHandler(async (req, res) => {
