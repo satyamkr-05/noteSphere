@@ -287,7 +287,6 @@ export default function HomePage({ reloadKey, showToast }) {
                   <span><i className="fa-solid fa-fire"></i> Trending</span>
                   <span><i className="fa-solid fa-download"></i> {note.downloads}</span>
                 </div>
-                <span className="trending-card__cta">Open in Explore</span>
               </Link>
             ))}
           </div>
