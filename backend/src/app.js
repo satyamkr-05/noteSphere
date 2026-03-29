@@ -10,6 +10,7 @@ import adminRoutes from "./routes/adminRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import feedbackRoutes from "./routes/feedbackRoutes.js";
 import noteRoutes from "./routes/noteRoutes.js";
+import questionBankRoutes from "./routes/questionBankRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import { errorHandler, notFound } from "./middleware/errorMiddleware.js";
 import { getReadinessState, isBackendReady } from "./state/readiness.js";
@@ -70,6 +71,7 @@ app.use("/api", (req, res, next) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/notes", noteRoutes);
+app.use("/api/question-bank", questionBankRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/users", userRoutes);
 

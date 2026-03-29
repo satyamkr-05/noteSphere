@@ -1,6 +1,7 @@
 import path from "path";
 import User from "../models/User.js";
 import Note from "../models/Note.js";
+import QuestionPaper from "../models/QuestionPaper.js";
 import Feedback from "../models/Feedback.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { createToken } from "../utils/createToken.js";
@@ -18,6 +19,7 @@ import {
   isMainAdminUser
 } from "../config/runtime.js";
 import { serializeNote } from "../utils/serializeNote.js";
+import { serializeQuestionPaper } from "../utils/serializeQuestionPaper.js";
 import { AppError } from "../utils/appError.js";
 import { removeStoredFile } from "../utils/noteFiles.js";
 import { NOTE_LIMITS } from "../../../shared/noteLimits.js";
@@ -149,6 +151,12 @@ async function findNoteWithRelations(noteId) {
     .populate("reviewedBy", "name email");
 }
 
+async function findQuestionPaperWithRelations(questionPaperId) {
+  return QuestionPaper.findById(questionPaperId)
+    .populate("uploadedBy", "name email")
+    .populate("reviewedBy", "name email");
+}
+
 export const loginAdmin = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   const normalizedEmail = normalizeText(email).toLowerCase();
@@ -227,6 +235,63 @@ export const getAdminNotes = asyncHandler(async (req, res) => {
   });
 });
 
+export const getAdminQuestionPapers = asyncHandler(async (req, res) => {
+  const { status = "", search = "" } = req.query;
+  const normalizedStatus = status.trim().toLowerCase();
+  const requestedPagination = parsePagination(req.query, {
+    defaultLimit: 12,
+    maxLimit: 36
+  });
+  const { filter, hasSearchQuery } = buildTextSearchFilter(search);
+
+  if (normalizedStatus) {
+    filter.status = normalizedStatus;
+  }
+
+  const [
+    totalItems,
+    totalQuestionPapers,
+    totalFeaturedQuestionPapers,
+    approvedQuestionPapers,
+    pendingQuestionPapers,
+    rejectedQuestionPapers
+  ] = await Promise.all([
+    QuestionPaper.countDocuments(filter),
+    QuestionPaper.countDocuments({}),
+    QuestionPaper.countDocuments({ featured: true }),
+    QuestionPaper.countDocuments({ status: "approved" }),
+    QuestionPaper.countDocuments({ status: "pending" }),
+    QuestionPaper.countDocuments({ status: "rejected" })
+  ]);
+  const pagination = buildPagination(requestedPagination, totalItems);
+
+  const questionPapers = await QuestionPaper.find(
+    filter,
+    hasSearchQuery ? { score: { $meta: "textScore" } } : {}
+  )
+    .populate("uploadedBy", "name email")
+    .populate("reviewedBy", "name email")
+    .sort(
+      hasSearchQuery
+        ? { score: { $meta: "textScore" }, createdAt: -1 }
+        : { createdAt: -1 }
+    )
+    .skip(pagination.skip)
+    .limit(pagination.limit);
+
+  res.json({
+    summary: {
+      totalQuestionPapers,
+      totalFeaturedQuestionPapers,
+      approvedQuestionPapers,
+      pendingQuestionPapers,
+      rejectedQuestionPapers
+    },
+    questionPapers: questionPapers.map((paper) => serializeQuestionPaper(req, paper)),
+    pagination: serializePagination(pagination)
+  });
+});
+
 export const updateAdminNote = asyncHandler(async (req, res) => {
   const note = await findNoteWithRelations(req.params.id);
 
@@ -298,6 +363,45 @@ export const deleteAdminNote = asyncHandler(async (req, res) => {
   res.json({ message: "Note deleted successfully." });
 });
 
+async function updateQuestionPaperReviewStatus(req, res, nextStatus) {
+  const questionPaper = await findQuestionPaperWithRelations(req.params.id);
+
+  if (!questionPaper) {
+    throw new AppError("Question paper not found.", 404);
+  }
+
+  questionPaper.status = nextStatus;
+  questionPaper.reviewedBy = req.user._id;
+  questionPaper.reviewedAt = new Date();
+
+  await questionPaper.save();
+  await questionPaper.populate("uploadedBy", "name email");
+  await questionPaper.populate("reviewedBy", "name email");
+
+  res.json({ questionPaper: serializeQuestionPaper(req, questionPaper) });
+}
+
+export const approveQuestionPaper = asyncHandler(async (req, res) => {
+  await updateQuestionPaperReviewStatus(req, res, "approved");
+});
+
+export const rejectQuestionPaper = asyncHandler(async (req, res) => {
+  await updateQuestionPaperReviewStatus(req, res, "rejected");
+});
+
+export const deleteAdminQuestionPaper = asyncHandler(async (req, res) => {
+  const questionPaper = await QuestionPaper.findById(req.params.id);
+
+  if (!questionPaper) {
+    throw new AppError("Question paper not found.", 404);
+  }
+
+  removeStoredFile(questionPaper.filePath);
+  await questionPaper.deleteOne();
+
+  res.json({ message: "Question paper deleted successfully." });
+});
+
 export const getAdminUsers = asyncHandler(async (req, res) => {
   const { search = "" } = req.query;
   const requestedPagination = parsePagination(req.query, {
@@ -310,7 +414,7 @@ export const getAdminUsers = asyncHandler(async (req, res) => {
     adminRole: { $in: [ADMIN_ROLES.USER, ADMIN_ROLES.SUB_ADMIN] },
     email: { $ne: getAdminEmail() }
   };
-  const [totalItems, totalAccounts, totalNotes, activeUploaderIds, totalSubAdmins] = await Promise.all([
+  const [totalItems, totalAccounts, totalNotes, totalQuestionPapers, noteUploaderIds, paperUploaderIds, totalSubAdmins] = await Promise.all([
     User.countDocuments({
       ...accountFilter
     }),
@@ -319,7 +423,9 @@ export const getAdminUsers = asyncHandler(async (req, res) => {
       email: { $ne: getAdminEmail() }
     }),
     Note.countDocuments({}),
+    QuestionPaper.countDocuments({}),
     Note.distinct("uploadedBy"),
+    QuestionPaper.distinct("uploadedBy"),
     User.countDocuments({ adminRole: ADMIN_ROLES.SUB_ADMIN, email: { $ne: getAdminEmail() } })
   ]);
   const pagination = buildPagination(requestedPagination, totalItems);
@@ -338,6 +444,9 @@ export const getAdminUsers = asyncHandler(async (req, res) => {
   const userNotes = userIds.length
     ? await Note.find({ uploadedBy: { $in: userIds } }, "uploadedBy fileName")
     : [];
+  const userQuestionPapers = userIds.length
+    ? await QuestionPaper.find({ uploadedBy: { $in: userIds } }, "uploadedBy fileName")
+    : [];
   const noteCountMap = new Map();
   const contentTypeMap = new Map();
 
@@ -354,11 +463,24 @@ export const getAdminUsers = asyncHandler(async (req, res) => {
     userContentMap.set(contentLabel, (userContentMap.get(contentLabel) || 0) + 1);
   }
 
+  for (const paper of userQuestionPapers) {
+    const userId = String(paper.uploadedBy);
+    noteCountMap.set(userId, (noteCountMap.get(userId) || 0) + 1);
+
+    if (!contentTypeMap.has(userId)) {
+      contentTypeMap.set(userId, new Map());
+    }
+
+    const userContentMap = contentTypeMap.get(userId);
+    userContentMap.set("Question Paper", (userContentMap.get("Question Paper") || 0) + 1);
+  }
+
   res.json({
     summary: {
       totalAccounts,
       totalNotes,
-      activeUploaders: activeUploaderIds.length,
+      totalQuestionPapers,
+      activeUploaders: new Set([...noteUploaderIds, ...paperUploaderIds].map(String)).size,
       totalSubAdmins
     },
     users: users.map((user) => {
@@ -582,12 +704,18 @@ export const deleteAdminUser = asyncHandler(async (req, res) => {
   }
 
   const notes = await Note.find({ uploadedBy: user._id });
+  const questionPapers = await QuestionPaper.find({ uploadedBy: user._id });
 
   for (const note of notes) {
     removeStoredFile(note.filePath);
   }
 
+  for (const questionPaper of questionPapers) {
+    removeStoredFile(questionPaper.filePath);
+  }
+
   await Note.deleteMany({ uploadedBy: user._id });
+  await QuestionPaper.deleteMany({ uploadedBy: user._id });
   await user.deleteOne();
 
   res.json({ message: "User account deleted successfully." });

@@ -137,7 +137,8 @@ export default function HomePage({ reloadKey, showToast }) {
 
           <div className="hero__actions">
             <Link to="/upload" className="btn btn--primary">Upload Notes</Link>
-            <Link to="/explore" className="btn btn--secondary">Explore Notes</Link>
+            <Link to="/explore" className="btn btn--secondary">Browse Notes</Link>
+            <Link to="/question-bank" className="btn btn--secondary">Question Bank</Link>
             {isAuthenticated ? (
               <Link to="/dashboard" className="btn btn--secondary">Dashboard</Link>
             ) : null}
@@ -195,6 +196,35 @@ export default function HomePage({ reloadKey, showToast }) {
 
           <div className="hero__glow hero__glow--one"></div>
           <div className="hero__glow hero__glow--two"></div>
+        </div>
+      </section>
+
+      <section className="section section--compact">
+        <div className="container">
+          <div className="section-heading reveal">
+            <span className="eyebrow">Study Modules</span>
+            <h2>Use the library the way you need</h2>
+            <p>Open notes for study material or switch to the question bank for structured exam papers.</p>
+          </div>
+
+          <div className="module-grid">
+            <article className="info-card glass-card reveal is-visible">
+              <i className="fa-regular fa-note-sticky"></i>
+              <div>
+                <h3>Notes</h3>
+                <p>Browse shared study material by subject and title.</p>
+                <Link to="/explore" className="btn btn--secondary">Open Notes</Link>
+              </div>
+            </article>
+            <article className="info-card glass-card reveal is-visible">
+              <i className="fa-solid fa-folder-tree"></i>
+              <div>
+                <h3>Question Bank</h3>
+                <p>Find papers by university, course, semester, subject, and exam type.</p>
+                <Link to="/question-bank" className="btn btn--secondary">Open Question Bank</Link>
+              </div>
+            </article>
+          </div>
         </div>
       </section>
 

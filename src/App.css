@@ -2277,3 +2277,76 @@ body.dark-theme .admin-select {
     grid-template-columns: 1fr;
   }
 }
+.content-type-switcher {
+  display: inline-flex;
+  gap: 0.6rem;
+  padding: 0.45rem;
+  margin-bottom: 1.5rem;
+  border-radius: 999px;
+}
+
+.content-type-switcher__button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0.8rem 1.2rem;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.content-type-switcher__button.is-active {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.question-bank-form-grid,
+.question-bank-filter-grid,
+.module-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.question-bank-form-grid {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.question-bank-filter-grid {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  width: 100%;
+}
+
+.question-bank-toolbar {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.question-bank-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.module-grid {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.module-grid .info-card {
+  align-items: flex-start;
+}
+
+.module-grid .btn {
+  margin-top: 1rem;
+}
+
+@media (max-width: 768px) {
+  .content-type-switcher {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

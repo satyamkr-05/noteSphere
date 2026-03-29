@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import NotePreviewModal from "../components/NotePreviewModal";
 import PaginationControls from "../components/PaginationControls";
+import QuestionPaperUploadPanel from "../components/QuestionPaperUploadPanel";
 import api, { getErrorMessage } from "../services/api";
 import { useReveal } from "../components/useReveal";
 import {
@@ -32,6 +33,7 @@ const initialPagination = {
 };
 
 export default function UploadPage({ onNotesChanged, showToast }) {
+  const [contentType, setContentType] = useState("note");
   const [form, setForm] = useState(initialForm);
   const [file, setFile] = useState(null);
   const [fileLabel, setFileLabel] = useState("Choose a file or drag it here");
@@ -179,6 +181,27 @@ export default function UploadPage({ onNotesChanged, showToast }) {
   return (
     <section className="section">
       <div className="container">
+        <div className="content-type-switcher glass-card reveal is-visible">
+          <button
+            type="button"
+            className={`content-type-switcher__button${contentType === "note" ? " is-active" : ""}`}
+            onClick={() => setContentType("note")}
+          >
+            Notes
+          </button>
+          <button
+            type="button"
+            className={`content-type-switcher__button${contentType === "question-paper" ? " is-active" : ""}`}
+            onClick={() => setContentType("question-paper")}
+          >
+            Question Bank
+          </button>
+        </div>
+
+        {contentType === "question-paper" ? (
+          <QuestionPaperUploadPanel onPapersChanged={onNotesChanged} showToast={showToast} />
+        ) : (
+          <>
         <div className="split-layout">
           <div className="split-layout__intro reveal">
             <span className="eyebrow">Upload Notes</span>
@@ -361,6 +384,8 @@ export default function UploadPage({ onNotesChanged, showToast }) {
         </section>
 
         <NotePreviewModal note={previewNote} onClose={() => setPreviewNote(null)} showToast={showToast} />
+          </>
+        )}
       </div>
     </section>
   );

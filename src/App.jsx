@@ -11,6 +11,7 @@ import AdminLoginPage from "./pages/AdminLoginPage";
 import AdminPage from "./pages/AdminPage";
 import HomePage from "./pages/HomePage";
 import ExplorePage from "./pages/ExplorePage";
+import QuestionBankPage from "./pages/QuestionBankPage";
 import ProfilePage from "./pages/ProfilePage";
 import UploadPage from "./pages/UploadPage";
 import AuthPage from "./pages/AuthPage";
@@ -42,6 +43,7 @@ function AppContent({ isDark, onToggleTheme, reloadKey, showToast, triggerReload
       <Routes>
         <Route path="/" element={<HomePage reloadKey={reloadKey} showToast={showToast} />} />
         <Route path="/explore" element={<ExplorePage onNotesChanged={triggerReload} showToast={showToast} />} />
+        <Route path="/question-bank" element={<QuestionBankPage showToast={showToast} />} />
         <Route path="/auth" element={<AuthPage showToast={showToast} />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage showToast={showToast} />} />
         <Route path="/reset-password/:token" element={<ResetPasswordPage showToast={showToast} />} />

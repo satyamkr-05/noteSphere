@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import NotePreviewModal from "../components/NotePreviewModal";
 import PaginationControls from "../components/PaginationControls";
+import QuestionPaperPreviewModal from "../components/QuestionPaperPreviewModal";
 import { useAuth } from "../context/AuthContext";
 import { useReveal } from "../components/useReveal";
 import api, { getErrorMessage } from "../services/api";
@@ -16,8 +17,17 @@ const initialNotesSummary = {
 const initialUsersSummary = {
   totalAccounts: 0,
   totalNotes: 0,
+  totalQuestionPapers: 0,
   activeUploaders: 0,
   totalSubAdmins: 0
+};
+
+const initialQuestionPaperSummary = {
+  totalQuestionPapers: 0,
+  totalFeaturedQuestionPapers: 0,
+  approvedQuestionPapers: 0,
+  pendingQuestionPapers: 0,
+  rejectedQuestionPapers: 0
 };
 
 const initialFeedbackSummary = {
@@ -43,26 +53,33 @@ const initialUserPagination = {
 export default function AdminPage({ onNotesChanged, showToast }) {
   const { user } = useAuth();
   const [notes, setNotes] = useState([]);
+  const [questionPapers, setQuestionPapers] = useState([]);
   const [users, setUsers] = useState([]);
   const [feedback, setFeedback] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [questionPaperSearchQuery, setQuestionPaperSearchQuery] = useState("");
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [feedbackSearchQuery, setFeedbackSearchQuery] = useState("");
   const [isNotesLoading, setIsNotesLoading] = useState(true);
+  const [isQuestionPapersLoading, setIsQuestionPapersLoading] = useState(true);
   const [isUsersLoading, setIsUsersLoading] = useState(true);
   const [isFeedbackLoading, setIsFeedbackLoading] = useState(true);
   const [previewNote, setPreviewNote] = useState(null);
+  const [previewQuestionPaper, setPreviewQuestionPaper] = useState(null);
   const [notesSummary, setNotesSummary] = useState(initialNotesSummary);
+  const [questionPaperSummary, setQuestionPaperSummary] = useState(initialQuestionPaperSummary);
   const [usersSummary, setUsersSummary] = useState(initialUsersSummary);
   const [feedbackSummary, setFeedbackSummary] = useState(initialFeedbackSummary);
   const [notesPagination, setNotesPagination] = useState(initialPagination);
+  const [questionPapersPagination, setQuestionPapersPagination] = useState(initialPagination);
   const [usersPagination, setUsersPagination] = useState(initialUserPagination);
   const [feedbackPagination, setFeedbackPagination] = useState(initialUserPagination);
   const [notesPage, setNotesPage] = useState(1);
+  const [questionPapersPage, setQuestionPapersPage] = useState(1);
   const [usersPage, setUsersPage] = useState(1);
   const [feedbackPage, setFeedbackPage] = useState(1);
 
-  useReveal([notes.length, users.length, feedback.length]);
+  useReveal([notes.length, questionPapers.length, users.length, feedback.length]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -79,6 +96,14 @@ export default function AdminPage({ onNotesChanged, showToast }) {
 
     return () => window.clearTimeout(timer);
   }, [userSearchQuery, usersPage]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      loadQuestionPapers(questionPapersPage);
+    }, 250);
+
+    return () => window.clearTimeout(timer);
+  }, [questionPaperSearchQuery, questionPapersPage]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -140,6 +165,32 @@ export default function AdminPage({ onNotesChanged, showToast }) {
     }
   }
 
+  async function loadQuestionPapers(pageToLoad = questionPapersPage) {
+    try {
+      setIsQuestionPapersLoading(true);
+      const response = await api.get("/admin/question-papers", {
+        params: {
+          ...(questionPaperSearchQuery ? { search: questionPaperSearchQuery } : {}),
+          page: pageToLoad,
+          limit: initialPagination.limit
+        }
+      });
+      setQuestionPapers(response.data.questionPapers || []);
+      setQuestionPaperSummary(response.data.summary || initialQuestionPaperSummary);
+      setQuestionPapersPagination(response.data.pagination || initialPagination);
+      if (response.data.pagination?.currentPage && response.data.pagination.currentPage !== pageToLoad) {
+        setQuestionPapersPage(response.data.pagination.currentPage);
+      }
+    } catch (error) {
+      setQuestionPapers([]);
+      setQuestionPaperSummary(initialQuestionPaperSummary);
+      setQuestionPapersPagination(initialPagination);
+      showToast(getErrorMessage(error, "Unable to load admin question papers."), "error");
+    } finally {
+      setIsQuestionPapersLoading(false);
+    }
+  }
+
   async function loadFeedback(pageToLoad = feedbackPage) {
     try {
       setIsFeedbackLoading(true);
@@ -178,6 +229,20 @@ export default function AdminPage({ onNotesChanged, showToast }) {
       onNotesChanged();
     } catch (error) {
       showToast(getErrorMessage(error, "Unable to delete this note."), "error");
+    }
+  }
+
+  async function handleDeleteQuestionPaper(questionPaperId) {
+    if (!window.confirm("Delete this question paper permanently?")) {
+      return;
+    }
+
+    try {
+      await api.delete(`/admin/question-papers/${questionPaperId}`);
+      showToast("Question paper deleted successfully.", "success");
+      await loadQuestionPapers(questionPapersPage);
+    } catch (error) {
+      showToast(getErrorMessage(error, "Unable to delete this question paper."), "error");
     }
   }
 
@@ -290,6 +355,14 @@ export default function AdminPage({ onNotesChanged, showToast }) {
                 <span>Featured Notes</span>
               </article>
               <article className="stat-card glass-card">
+                <strong>{questionPaperSummary.totalQuestionPapers}</strong>
+                <span>Question Papers</span>
+              </article>
+              <article className="stat-card glass-card">
+                <strong>{questionPaperSummary.totalFeaturedQuestionPapers}</strong>
+                <span>Featured Papers</span>
+              </article>
+              <article className="stat-card glass-card">
                 <strong>{usersSummary.totalAccounts}</strong>
                 <span>Total Accounts</span>
               </article>
@@ -392,6 +465,95 @@ export default function AdminPage({ onNotesChanged, showToast }) {
               pagination={notesPagination}
               onPageChange={setNotesPage}
               itemLabel="notes"
+            />
+          ) : null}
+        </section>
+
+        <section className="section section--compact">
+          <div className="section-heading reveal">
+            <span className="eyebrow">Manage Question Bank</span>
+            <h2>All uploaded question papers</h2>
+            <p>Review the structured question bank and remove duplicate or incorrect papers.</p>
+          </div>
+
+          <div className="explore-toolbar glass-card reveal">
+            <div className="search-field">
+              <i className="fa-solid fa-magnifying-glass"></i>
+              <input
+                type="text"
+                placeholder="Search by university, course, subject, or title"
+                value={questionPaperSearchQuery}
+                onChange={(event) => {
+                  setQuestionPaperSearchQuery(event.target.value);
+                  setQuestionPapersPage(1);
+                }}
+              />
+            </div>
+
+            <div className="admin-toolbar-actions">
+              <button
+                type="button"
+                className="btn btn--secondary"
+                onClick={() => {
+                  setQuestionPaperSearchQuery("");
+                  setQuestionPapersPage(1);
+                }}
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+
+          {isQuestionPapersLoading ? <div className="page-status glass-card">Loading admin question papers...</div> : null}
+
+          <div className="notes-grid">
+            {questionPapers.map((paper) => (
+              <article key={paper.id} className="note-card glass-card reveal is-visible">
+                <div className="note-card__header">
+                  <span className="note-card__chip">{paper.subjectName}</span>
+                  {paper.featured ? <span className="status-badge status-badge--approved">Featured</span> : null}
+                </div>
+                <h3>{paper.title}</h3>
+                <p>{paper.pathLabel}</p>
+                <div className="note-card__meta">
+                  <span><i className="fa-solid fa-user"></i> {paper.uploadedBy?.name || "Unknown user"}</span>
+                  <span><i className="fa-solid fa-calendar"></i> {paper.paperLabel}</span>
+                </div>
+                <div className="note-card__meta">
+                  <span><i className="fa-solid fa-file-lines"></i> {paper.fileName}</span>
+                  <span><i className="fa-solid fa-download"></i> {paper.downloads}</span>
+                </div>
+                <div className="note-card__actions">
+                  <div className="note-card__buttons">
+                    <button
+                      type="button"
+                      className="btn btn--secondary"
+                      onClick={() => setPreviewQuestionPaper(paper)}
+                    >
+                      Preview
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn--primary"
+                      onClick={() => handleDeleteQuestionPaper(paper.id)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          {!isQuestionPapersLoading && questionPapers.length === 0 ? (
+            <p className="empty-state glass-card">No question papers match the current admin filters.</p>
+          ) : null}
+
+          {!isQuestionPapersLoading && questionPapers.length > 0 ? (
+            <PaginationControls
+              pagination={questionPapersPagination}
+              onPageChange={setQuestionPapersPage}
+              itemLabel="papers"
             />
           ) : null}
         </section>
@@ -619,6 +781,11 @@ export default function AdminPage({ onNotesChanged, showToast }) {
         </section>
 
         <NotePreviewModal note={previewNote} onClose={() => setPreviewNote(null)} showToast={showToast} />
+        <QuestionPaperPreviewModal
+          paper={previewQuestionPaper}
+          onClose={() => setPreviewQuestionPaper(null)}
+          showToast={showToast}
+        />
       </div>
     </section>
   );
