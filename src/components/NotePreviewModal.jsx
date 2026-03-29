@@ -41,6 +41,8 @@ export default function NotePreviewModal({ note, onClose, showToast }) {
 
       try {
         setIsLoadingPreview(true);
+        setTextContent("");
+        setPreviewUrl("");
         const response = await api.get(`/notes/${note.id}/file`, {
           params: { disposition: "inline" },
           responseType: "blob"
@@ -51,15 +53,18 @@ export default function NotePreviewModal({ note, onClose, showToast }) {
           return;
         }
 
-        if (previewType === "text") {
-          setTextContent(await previewBlob.text());
-          setPreviewUrl("");
-          return;
-        }
-
         nextPreviewUrl = window.URL.createObjectURL(previewBlob);
         setPreviewUrl(nextPreviewUrl);
-        setTextContent("");
+
+        if (previewType === "text") {
+          const nextTextContent = await previewBlob.text();
+
+          if (isCancelled) {
+            return;
+          }
+
+          setTextContent(nextTextContent);
+        }
       } catch (error) {
         if (!isCancelled) {
           setTextContent("");
@@ -86,6 +91,29 @@ export default function NotePreviewModal({ note, onClose, showToast }) {
 
   if (!note) {
     return null;
+  }
+
+  function handleOpenFile() {
+    if (!previewUrl) {
+      showToast?.("This file is not ready to open yet.", "info");
+      return;
+    }
+
+    window.open(previewUrl, "_blank", "noopener,noreferrer");
+  }
+
+  function handleDownloadFile() {
+    if (!previewUrl) {
+      showToast?.("This file is not ready to download yet.", "info");
+      return;
+    }
+
+    const link = document.createElement("a");
+    link.href = previewUrl;
+    link.download = note.fileName || "note";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
   return (
@@ -124,14 +152,20 @@ export default function NotePreviewModal({ note, onClose, showToast }) {
               <h4>Preview not available for this file type</h4>
               <p>
                 {previewUrl
-                  ? "Use the button below to open the protected file in a new tab."
+                  ? "This note can still be opened or downloaded safely from the buttons below."
                   : "The protected file could not be loaded for preview."}
               </p>
-              {previewUrl ? (
-                <a href={previewUrl} target="_blank" rel="noreferrer" className="btn btn--primary">
-                  Open File
-                </a>
-              ) : null}
+            </div>
+          ) : null}
+
+          {!isLoadingPreview && previewUrl ? (
+            <div className="preview-modal__actions">
+              <button type="button" className="btn btn--secondary" onClick={handleOpenFile}>
+                Open File
+              </button>
+              <button type="button" className="btn btn--primary" onClick={handleDownloadFile}>
+                Download File
+              </button>
             </div>
           ) : null}
         </div>
