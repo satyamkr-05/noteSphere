@@ -13,8 +13,12 @@ export function removeStoredFile(filePath) {
 
   const absolutePath = buildStoredFileAbsolutePath(filePath);
 
-  if (fs.existsSync(absolutePath)) {
-    fs.unlinkSync(absolutePath);
+  try {
+    if (fs.existsSync(absolutePath)) {
+      fs.unlinkSync(absolutePath);
+    }
+  } catch (error) {
+    console.warn(`Unable to remove stored file: ${absolutePath}`, error);
   }
 }
 

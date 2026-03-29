@@ -39,26 +39,40 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
+    let isActive = true;
+
     async function hydrateUser() {
       if (!token) {
-        setIsAuthLoading(false);
+        if (isActive) {
+          setIsAuthLoading(false);
+        }
         return;
       }
 
       try {
         const response = await api.get("/auth/me");
-        persistUser(response.data.user);
+        if (isActive) {
+          persistUser(response.data.user);
+        }
       } catch {
-        removeStorageItem(TOKEN_KEY);
-        removeStorageItem(USER_KEY);
-        setToken("");
-        setUser(null);
+        if (isActive) {
+          removeStorageItem(TOKEN_KEY);
+          removeStorageItem(USER_KEY);
+          setToken("");
+          setUser(null);
+        }
       } finally {
-        setIsAuthLoading(false);
+        if (isActive) {
+          setIsAuthLoading(false);
+        }
       }
     }
 
     hydrateUser();
+
+    return () => {
+      isActive = false;
+    };
   }, [token]);
 
   useEffect(() => {

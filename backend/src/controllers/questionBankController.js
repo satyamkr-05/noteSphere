@@ -404,24 +404,31 @@ export const createQuestionPaper = asyncHandler(async (req, res) => {
     throw error;
   }
 
-  const paper = await QuestionPaper.create({
-    title: validatedTitle,
-    universityName: normalizedUniversityName,
-    courseName: normalizedCourseName,
-    semester: normalizedSemester,
-    subjectName: normalizedSubjectName,
-    examYear: normalizedExamYear,
-    examType: normalizedExamType,
-    description: normalizedDescription,
-    status: "approved",
-    reviewedBy: null,
-    reviewedAt: null,
-    featured: featured === "true",
-    fileName: req.file.originalname,
-    filePath: `/uploads/${req.file.filename}`,
-    fileHash,
-    uploadedBy: req.user._id
-  });
+  let paper;
+
+  try {
+    paper = await QuestionPaper.create({
+      title: validatedTitle,
+      universityName: normalizedUniversityName,
+      courseName: normalizedCourseName,
+      semester: normalizedSemester,
+      subjectName: normalizedSubjectName,
+      examYear: normalizedExamYear,
+      examType: normalizedExamType,
+      description: normalizedDescription,
+      status: "approved",
+      reviewedBy: null,
+      reviewedAt: null,
+      featured: featured === "true",
+      fileName: req.file.originalname,
+      filePath: `/uploads/${req.file.filename}`,
+      fileHash,
+      uploadedBy: req.user._id
+    });
+  } catch (error) {
+    removeStoredFile(req.file.path);
+    throw error;
+  }
 
   const populatedPaper = await populateQuestionPaperRelations(paper);
   res.status(201).json({ paper: serializeQuestionPaper(req, populatedPaper) });
@@ -495,6 +502,7 @@ export const updateQuestionPaper = asyncHandler(async (req, res) => {
 
   if (req.file) {
     const nextFileHash = await hashFileAtPath(req.file.path);
+    const previousFilePath = paper.filePath;
 
     try {
       await ensureUniqueFileHash(res, nextFileHash, paper._id.toString());
@@ -503,13 +511,24 @@ export const updateQuestionPaper = asyncHandler(async (req, res) => {
       throw error;
     }
 
-    removeStoredFile(paper.filePath);
+    removeStoredFile(previousFilePath);
     paper.fileName = req.file.originalname;
     paper.filePath = `/uploads/${req.file.filename}`;
     paper.fileHash = nextFileHash;
   }
 
-  const updatedPaper = await paper.save();
+  let updatedPaper;
+
+  try {
+    updatedPaper = await paper.save();
+  } catch (error) {
+    if (req.file) {
+      removeStoredFile(req.file.path);
+    }
+
+    throw error;
+  }
+
   await populateQuestionPaperRelations(updatedPaper);
 
   res.json({ paper: serializeQuestionPaper(req, updatedPaper) });

@@ -74,8 +74,14 @@ export default function ProfilePage({ showToast }) {
       setStats(response.data.stats || emptyStats);
       setNotes(response.data.notes || []);
       setPagination(response.data.pagination || initialPagination);
+      if (response.data.pagination?.currentPage && response.data.pagination.currentPage !== pageToLoad) {
+        setCurrentPage(response.data.pagination.currentPage);
+      }
       updateCurrentUser(response.data.user);
     } catch (error) {
+      setStats(emptyStats);
+      setNotes([]);
+      setPagination(initialPagination);
       showToast(getErrorMessage(error, "Unable to load your profile."), "error");
     }
   }

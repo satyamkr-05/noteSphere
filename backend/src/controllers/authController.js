@@ -15,7 +15,23 @@ function normalizeEmail(value = "") {
 }
 
 function normalizePassword(value = "") {
-  return value.trim();
+  return typeof value === "string" ? value : "";
+}
+
+function validateEmail(res, value) {
+  const normalizedEmail = normalizeEmail(value);
+
+  if (!normalizedEmail) {
+    res.status(400);
+    throw new Error("Email is required.");
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+    res.status(400);
+    throw new Error("Please enter a valid email address.");
+  }
+
+  return normalizedEmail;
 }
 
 function getPasswordResetWindowMs() {
@@ -48,7 +64,7 @@ function buildAuthResponse(user) {
 export const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
   const normalizedName = normalizeName(name);
-  const normalizedEmail = normalizeEmail(email);
+  const normalizedEmail = validateEmail(res, email);
 
   if (!normalizedName || !normalizedEmail || !password) {
     res.status(400);
@@ -73,7 +89,7 @@ export const registerUser = asyncHandler(async (req, res) => {
 
 export const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
-  const normalizedEmail = normalizeEmail(email);
+  const normalizedEmail = validateEmail(res, email);
 
   if (!normalizedEmail || !password) {
     res.status(400);
@@ -97,12 +113,7 @@ export const getCurrentUser = asyncHandler(async (req, res) => {
 });
 
 export const requestPasswordReset = asyncHandler(async (req, res) => {
-  const normalizedEmail = normalizeEmail(req.body.email);
-
-  if (!normalizedEmail) {
-    res.status(400);
-    throw new Error("Email is required.");
-  }
+  const normalizedEmail = validateEmail(res, req.body.email);
 
   const user = await User.findOne({ email: normalizedEmail }).select(
     "+passwordResetToken +passwordResetExpiresAt"

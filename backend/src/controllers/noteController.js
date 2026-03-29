@@ -248,19 +248,26 @@ export const createNote = asyncHandler(async (req, res) => {
     throw error;
   }
 
-  const note = await Note.create({
-    title: normalizedTitle,
-    subject: normalizedSubject,
-    description: normalizedDescription,
-    status: "approved",
-    reviewedBy: null,
-    reviewedAt: null,
-    featured: featured === "true",
-    fileName: req.file.originalname,
-    filePath: `/uploads/${req.file.filename}`,
-    fileHash,
-    uploadedBy: req.user._id
-  });
+  let note;
+
+  try {
+    note = await Note.create({
+      title: normalizedTitle,
+      subject: normalizedSubject,
+      description: normalizedDescription,
+      status: "approved",
+      reviewedBy: null,
+      reviewedAt: null,
+      featured: featured === "true",
+      fileName: req.file.originalname,
+      filePath: `/uploads/${req.file.filename}`,
+      fileHash,
+      uploadedBy: req.user._id
+    });
+  } catch (error) {
+    removeStoredFile(req.file.path);
+    throw error;
+  }
 
   const populatedNote = await populateNoteRelations(note);
   res.status(201).json({ note: serializeNote(req, populatedNote) });
@@ -304,6 +311,7 @@ export const updateNote = asyncHandler(async (req, res) => {
 
   if (req.file) {
     const nextFileHash = await hashFileAtPath(req.file.path);
+    const previousFilePath = note.filePath;
 
     try {
       await ensureUniqueFileHash(res, nextFileHash, note._id.toString());
@@ -312,13 +320,24 @@ export const updateNote = asyncHandler(async (req, res) => {
       throw error;
     }
 
-    removeStoredFile(note.filePath);
+    removeStoredFile(previousFilePath);
     note.fileName = req.file.originalname;
     note.filePath = `/uploads/${req.file.filename}`;
     note.fileHash = nextFileHash;
   }
 
-  const updatedNote = await note.save();
+  let updatedNote;
+
+  try {
+    updatedNote = await note.save();
+  } catch (error) {
+    if (req.file) {
+      removeStoredFile(req.file.path);
+    }
+
+    throw error;
+  }
+
   await populateNoteRelations(updatedNote);
 
   res.json({ note: serializeNote(req, updatedNote) });

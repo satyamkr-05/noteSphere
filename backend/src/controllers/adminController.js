@@ -643,7 +643,7 @@ export const getAdminSubAdmins = asyncHandler(async (req, res) => {
 export const createSubAdmin = asyncHandler(async (req, res) => {
   const name = validateRequiredTextField(res, "Name", req.body.name, 60);
   const email = validateRequiredTextField(res, "Email", req.body.email, 120).toLowerCase();
-  const password = normalizeText(req.body.password);
+  const password = typeof req.body.password === "string" ? req.body.password : "";
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     throw new AppError("Please enter a valid email address.", 400);

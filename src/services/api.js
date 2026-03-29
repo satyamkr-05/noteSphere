@@ -2,6 +2,7 @@ import axios from "axios";
 import { getStorageItem } from "../utils/storage";
 
 export const AUTH_EXPIRED_EVENT = "notesphere:auth-expired";
+let hasDispatchedAuthExpired = false;
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://127.0.0.1:5000/api" : "/api");
@@ -25,7 +26,8 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && getStorageItem("notesphere-token")) {
+    if (error.response?.status === 401 && getStorageItem("notesphere-token") && !hasDispatchedAuthExpired) {
+      hasDispatchedAuthExpired = true;
       window.dispatchEvent(
         new CustomEvent(AUTH_EXPIRED_EVENT, {
           detail: {
@@ -40,6 +42,10 @@ api.interceptors.response.use(
 );
 
 export function getErrorMessage(error, fallbackMessage = "Something went wrong.") {
+  if (error?.response?.status !== 401) {
+    hasDispatchedAuthExpired = false;
+  }
+
   if (axios.isAxiosError(error)) {
     const responseMessage = error.response?.data?.message;
 
