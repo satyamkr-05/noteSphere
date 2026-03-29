@@ -806,6 +806,17 @@ body.dark-theme .btn--secondary {
   border-color: rgba(91, 124, 255, 0.25);
 }
 
+.trending-card--link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.trending-card--link:focus-visible {
+  outline: 2px solid rgba(91, 124, 255, 0.45);
+  outline-offset: 4px;
+}
+
 .trending-card__meta,
 .note-card__meta {
   display: flex;
@@ -1256,6 +1267,11 @@ body.dark-theme .profile-card__info-value {
   overflow: hidden;
 }
 
+.note-card--focused {
+  border-color: rgba(91, 124, 255, 0.4);
+  box-shadow: 0 18px 45px rgba(91, 124, 255, 0.18);
+}
+
 .user-card {
   position: relative;
   overflow: hidden;
@@ -1275,6 +1291,15 @@ body.dark-theme .profile-card__info-value {
 .info-card h3,
 .user-card h3 {
   margin: 0.6rem 0;
+}
+
+.trending-card__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--primary);
 }
 
 .note-card__header,

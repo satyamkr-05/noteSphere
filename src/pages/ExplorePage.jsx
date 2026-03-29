@@ -21,6 +21,7 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
   const [loadError, setLoadError] = useState("");
   const [previewNote, setPreviewNote] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
+  const focusNoteId = searchParams.get("focus") || "";
   const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
   const [currentPage, setCurrentPage] = useState(getPageFromQuery(searchParams.get("page")));
   const [pagination, setPagination] = useState(initialPagination);
@@ -60,10 +61,11 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
         setPagination(response.data.pagination || initialPagination);
         setLoadError("");
         setSearchParams(
-          searchQuery || currentPage > 1
+          searchQuery || currentPage > 1 || focusNoteId
             ? {
                 ...(searchQuery ? { search: searchQuery } : {}),
-                ...(currentPage > 1 ? { page: String(currentPage) } : {})
+                ...(currentPage > 1 ? { page: String(currentPage) } : {}),
+                ...(focusNoteId ? { focus: focusNoteId } : {})
               }
             : {}
         );
@@ -80,7 +82,7 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
     }, 250);
 
     return () => window.clearTimeout(timer);
-  }, [currentPage, searchQuery, setSearchParams]);
+  }, [currentPage, focusNoteId, searchQuery, setSearchParams]);
 
   useEffect(() => {
     const noteIdToDownload = searchParams.get("download");
@@ -94,6 +96,22 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
     nextParams.delete("download");
     setSearchParams(nextParams);
   }, [isAuthenticated, searchParams, setSearchParams]);
+
+  useEffect(() => {
+    if (isLoading || !focusNoteId || notes.length === 0) {
+      return;
+    }
+
+    const targetCard = document.getElementById(`explore-note-${focusNoteId}`);
+
+    if (!targetCard) {
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      targetCard.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  }, [focusNoteId, isLoading, notes]);
 
   function handlePreview(note) {
     if (!isAuthenticated) {
@@ -189,7 +207,11 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
 
             <div className="notes-grid notes-grid--subject">
               {subjectNotes.map((note) => (
-                <article key={note.id} className="note-card glass-card reveal is-visible">
+                <article
+                  key={note.id}
+                  id={`explore-note-${note.id}`}
+                  className={`note-card glass-card reveal is-visible${note.id === focusNoteId ? " note-card--focused" : ""}`}
+                >
                   <span className="note-card__chip">{note.subject}</span>
                   <h3>{note.title}</h3>
                   <p>{note.description}</p>

@@ -98,6 +98,21 @@ export default function HomePage({ reloadKey, showToast }) {
     navigate(`/explore${query}`);
   }
 
+  function buildTrendingExploreLink(note) {
+    const params = new URLSearchParams();
+    const searchTerm = note.title?.trim() || note.subject?.trim() || "";
+
+    if (searchTerm) {
+      params.set("search", searchTerm);
+    }
+
+    if (note.id) {
+      params.set("focus", note.id);
+    }
+
+    return `/explore?${params.toString()}`;
+  }
+
   function handleFeedbackFieldChange(event) {
     const { name, value } = event.target;
     setFeedbackForm((current) => ({
@@ -260,7 +275,11 @@ export default function HomePage({ reloadKey, showToast }) {
           </div>
           <div className="trending-grid">
             {trendingNotes.map((note) => (
-              <article key={note.id} className="trending-card glass-card reveal is-visible">
+              <Link
+                key={note.id}
+                to={buildTrendingExploreLink(note)}
+                className="trending-card trending-card--link glass-card reveal is-visible"
+              >
                 <span className="note-card__chip">{note.subject}</span>
                 <h3>{note.title}</h3>
                 <p>{note.description}</p>
@@ -268,7 +287,8 @@ export default function HomePage({ reloadKey, showToast }) {
                   <span><i className="fa-solid fa-fire"></i> Trending</span>
                   <span><i className="fa-solid fa-download"></i> {note.downloads}</span>
                 </div>
-              </article>
+                <span className="trending-card__cta">Open in Explore</span>
+              </Link>
             ))}
           </div>
         </div>
