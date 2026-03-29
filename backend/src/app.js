@@ -25,6 +25,8 @@ const distDir = path.resolve(currentDirPath, "..", "..", "dist");
 const distIndexPath = path.join(distDir, "index.html");
 const hasFrontendBuild = fs.existsSync(distIndexPath);
 
+app.disable("x-powered-by");
+
 app.use(
   cors({
     origin(origin, callback) {
@@ -38,8 +40,14 @@ app.use(
     credentials: true
   })
 );
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "SAMEORIGIN");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  next();
+});
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 app.use("/media/avatars", express.static(avatarDir));
 
 app.get("/api/health", (_req, res) => {
