@@ -22,7 +22,7 @@ const initialForm = {
   courseName: "",
   semester: "",
   subjectName: "",
-  examYear: String(new Date().getFullYear()),
+  examYear: "",
   examType: QUESTION_PAPER_EXAM_TYPES[0],
   description: "",
   featured: false
@@ -175,9 +175,9 @@ export default function QuestionPaperUploadPanel({ onPapersChanged, showToast })
       courseName: paper.courseName,
       semester: paper.semester,
       subjectName: paper.subjectName,
-      examYear: String(paper.examYear),
+      examYear: paper.examYear ? String(paper.examYear) : "",
       examType: paper.examType,
-      description: paper.description,
+      description: paper.description || "",
       featured: paper.featured
     });
     setFile(null);
@@ -306,9 +306,9 @@ export default function QuestionPaperUploadPanel({ onPapersChanged, showToast })
                 id="paperYear"
                 min="2000"
                 max={new Date().getFullYear() + 1}
+                placeholder="Optional"
                 value={form.examYear}
                 onChange={(event) => setForm((current) => ({ ...current, examYear: event.target.value }))}
-                required
               />
             </div>
 
@@ -336,10 +336,9 @@ export default function QuestionPaperUploadPanel({ onPapersChanged, showToast })
               value={form.description}
               onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
               maxLength={QUESTION_BANK_LIMITS.descriptionMaxLength}
-              required
             ></textarea>
             <small className="form-hint">
-              <span>Keep it short and informative.</span>
+              <span>Optional. Keep it short and informative if you add one.</span>
               <span>
                 {formatQuestionBankCharacterCount(form.description, QUESTION_BANK_LIMITS.descriptionMaxLength)}
               </span>

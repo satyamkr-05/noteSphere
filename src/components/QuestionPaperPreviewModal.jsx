@@ -124,7 +124,7 @@ export default function QuestionPaperPreviewModal({ paper, onClose, showToast })
           <div>
             <span className="note-card__chip">{paper.subjectName}</span>
             <h3 id="paperPreviewTitle">{paper.title}</h3>
-            <p>{paper.pathLabel} | {paper.paperLabel}</p>
+            <p>{paper.paperLabel ? `${paper.pathLabel} | ${paper.paperLabel}` : paper.pathLabel}</p>
           </div>
           <button type="button" className="preview-modal__close" onClick={onClose} aria-label="Close preview">
             <i className="fa-solid fa-xmark"></i>

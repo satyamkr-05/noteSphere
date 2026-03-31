@@ -275,10 +275,9 @@ export default function UploadPage({ onNotesChanged, showToast }) {
                 value={form.description}
                 onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
                 maxLength={NOTE_LIMITS.descriptionMaxLength}
-                required
               ></textarea>
               <small className="form-hint">
-                <span>Max {NOTE_LIMITS.descriptionMaxLength} characters.</span>
+                <span>Optional. Max {NOTE_LIMITS.descriptionMaxLength} characters.</span>
                 <span>{formatCharacterCount(form.description, NOTE_LIMITS.descriptionMaxLength)}</span>
               </small>
             </div>

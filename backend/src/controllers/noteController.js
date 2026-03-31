@@ -46,6 +46,20 @@ function validateOptionalTextField(res, label, value, maxLength) {
   return validateRequiredTextField(res, label, value, maxLength);
 }
 
+function validateOptionalLooseTextField(res, label, value, maxLength) {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const normalizedValue = normalizeText(value);
+
+  if (normalizedValue.length > maxLength) {
+    throwBadRequest(res, `${label} must be ${maxLength} characters or fewer.`);
+  }
+
+  return normalizedValue;
+}
+
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -233,12 +247,12 @@ export const createNote = asyncHandler(async (req, res) => {
     subject,
     NOTE_LIMITS.subjectMaxLength
   );
-  const normalizedDescription = validateRequiredTextField(
+  const normalizedDescription = validateOptionalLooseTextField(
     res,
     "Description",
     description,
     NOTE_LIMITS.descriptionMaxLength
-  );
+  ) ?? "";
   const fileHash = await hashFileAtPath(req.file.path);
 
   try {
@@ -295,7 +309,7 @@ export const updateNote = asyncHandler(async (req, res) => {
   note.subject =
     validateOptionalTextField(res, "Subject", subject, NOTE_LIMITS.subjectMaxLength) ?? note.subject;
   note.description =
-    validateOptionalTextField(
+    validateOptionalLooseTextField(
       res,
       "Description",
       description,

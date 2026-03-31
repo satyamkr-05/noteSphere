@@ -11,8 +11,7 @@ const questionPaperFields = [
   ["universityName", "University", QUESTION_BANK_LIMITS.universityMaxLength],
   ["courseName", "Course", QUESTION_BANK_LIMITS.courseMaxLength],
   ["semester", "Semester", QUESTION_BANK_LIMITS.semesterMaxLength],
-  ["subjectName", "Subject", QUESTION_BANK_LIMITS.subjectMaxLength],
-  ["description", "Description", QUESTION_BANK_LIMITS.descriptionMaxLength]
+  ["subjectName", "Subject", QUESTION_BANK_LIMITS.subjectMaxLength]
 ];
 
 export function formatQuestionBankCharacterCount(value, maxLength) {
@@ -48,16 +47,6 @@ export function validateQuestionPaperForm(form) {
     }
   }
 
-  const parsedYear = Number.parseInt(normalizedForm.examYear, 10);
-  const currentYear = new Date().getFullYear() + 1;
-
-  if (!Number.isInteger(parsedYear) || parsedYear < 2000 || parsedYear > currentYear) {
-    return {
-      error: "Exam year must be a valid year.",
-      value: normalizedForm
-    };
-  }
-
   if (!QUESTION_PAPER_EXAM_TYPES.includes(normalizedForm.examType)) {
     return {
       error: "Please choose a valid exam type.",
@@ -65,11 +54,34 @@ export function validateQuestionPaperForm(form) {
     };
   }
 
+  if (normalizedForm.description.length > QUESTION_BANK_LIMITS.descriptionMaxLength) {
+    return {
+      error: `Description must be ${QUESTION_BANK_LIMITS.descriptionMaxLength} characters or fewer.`,
+      value: normalizedForm
+    };
+  }
+
+  let normalizedExamYear = "";
+
+  if (normalizedForm.examYear) {
+    const parsedYear = Number.parseInt(normalizedForm.examYear, 10);
+    const currentYear = new Date().getFullYear() + 1;
+
+    if (!Number.isInteger(parsedYear) || parsedYear < 2000 || parsedYear > currentYear) {
+      return {
+        error: "Exam year must be a valid year.",
+        value: normalizedForm
+      };
+    }
+
+    normalizedExamYear = String(parsedYear);
+  }
+
   return {
     error: "",
     value: {
       ...normalizedForm,
-      examYear: String(parsedYear)
+      examYear: normalizedExamYear
     }
   };
 }

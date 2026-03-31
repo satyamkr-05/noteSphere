@@ -30,7 +30,7 @@ const questionPaperSchema = new mongoose.Schema(
     },
     examYear: {
       type: Number,
-      required: true
+      default: null
     },
     examType: {
       type: String,

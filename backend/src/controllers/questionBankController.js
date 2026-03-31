@@ -48,6 +48,20 @@ function validateOptionalTextField(res, label, value, maxLength) {
   return validateRequiredTextField(res, label, value, maxLength);
 }
 
+function validateOptionalLooseTextField(res, label, value, maxLength) {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const normalizedValue = normalizeText(value);
+
+  if (normalizedValue.length > maxLength) {
+    throwBadRequest(res, `${label} must be ${maxLength} characters or fewer.`);
+  }
+
+  return normalizedValue;
+}
+
 function validateExamYear(res, value) {
   const parsedYear = Number.parseInt(String(value), 10);
   const currentYear = new Date().getFullYear() + 1;
@@ -59,12 +73,28 @@ function validateExamYear(res, value) {
   return parsedYear;
 }
 
+function validateOptionalCreateExamYear(res, value) {
+  const normalizedValue = normalizeText(String(value ?? ""));
+
+  if (!normalizedValue) {
+    return null;
+  }
+
+  return validateExamYear(res, normalizedValue);
+}
+
 function validateOptionalExamYear(res, value) {
   if (value === undefined) {
     return undefined;
   }
 
-  return validateExamYear(res, value);
+  const normalizedValue = normalizeText(String(value));
+
+  if (!normalizedValue) {
+    return null;
+  }
+
+  return validateExamYear(res, normalizedValue);
 }
 
 function validateExamType(res, value) {
@@ -379,17 +409,15 @@ export const createQuestionPaper = asyncHandler(async (req, res) => {
     QUESTION_BANK_LIMITS.subjectMaxLength
   );
   const normalizedExamType = validateExamType(res, examType);
-  const normalizedExamYear = validateExamYear(res, examYear);
-  const normalizedTitle =
-    normalizeText(title) ||
-    `${normalizedExamYear} ${normalizedExamType}`;
+  const normalizedExamYear = validateOptionalCreateExamYear(res, examYear);
+  const normalizedTitle = normalizeText(title) || [normalizedExamYear, normalizedExamType].filter(Boolean).join(" ");
   const validatedTitle = validateRequiredTextField(
     res,
     "Title",
     normalizedTitle,
     QUESTION_BANK_LIMITS.titleMaxLength
   );
-  const normalizedDescription = validateOptionalTextField(
+  const normalizedDescription = validateOptionalLooseTextField(
     res,
     "Description",
     description,
@@ -485,7 +513,7 @@ export const updateQuestionPaper = asyncHandler(async (req, res) => {
   paper.title =
     validateOptionalTextField(res, "Title", title, QUESTION_BANK_LIMITS.titleMaxLength) ?? paper.title;
   paper.description =
-    validateOptionalTextField(
+    validateOptionalLooseTextField(
       res,
       "Description",
       description,

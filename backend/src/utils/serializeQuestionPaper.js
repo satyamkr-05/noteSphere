@@ -11,6 +11,8 @@ function serializePerson(person) {
 }
 
 export function serializeQuestionPaper(_req, paper) {
+  const paperLabel = [paper.examYear, paper.examType].filter(Boolean).join(" ");
+
   return {
     id: paper._id,
     title: paper.title,
@@ -29,7 +31,7 @@ export function serializeQuestionPaper(_req, paper) {
     createdAt: paper.createdAt,
     updatedAt: paper.updatedAt,
     pathLabel: `${paper.universityName} > ${paper.courseName} > ${paper.semester} > ${paper.subjectName}`,
-    paperLabel: `${paper.examYear} ${paper.examType}`,
+    paperLabel,
     uploadedBy: serializePerson(paper.uploadedBy),
     reviewedBy: serializePerson(paper.reviewedBy)
   };

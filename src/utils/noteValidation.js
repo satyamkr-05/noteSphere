@@ -7,8 +7,7 @@ import {
 
 const noteFields = [
   ["title", "Title", NOTE_LIMITS.titleMaxLength],
-  ["subject", "Subject", NOTE_LIMITS.subjectMaxLength],
-  ["description", "Description", NOTE_LIMITS.descriptionMaxLength]
+  ["subject", "Subject", NOTE_LIMITS.subjectMaxLength]
 ];
 
 export function formatCharacterCount(value, maxLength) {
@@ -37,6 +36,13 @@ export function validateNoteForm(form) {
         value: normalizedForm
       };
     }
+  }
+
+  if (normalizedForm.description.length > NOTE_LIMITS.descriptionMaxLength) {
+    return {
+      error: `Description must be ${NOTE_LIMITS.descriptionMaxLength} characters or fewer.`,
+      value: normalizedForm
+    };
   }
 
   return {
