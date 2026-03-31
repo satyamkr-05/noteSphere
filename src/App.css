@@ -638,8 +638,8 @@ body.dark-theme .btn--secondary {
 }
 
 .stat-card {
-  padding: 1rem 1.2rem;
-  min-width: 145px;
+  padding: 0.85rem 1rem;
+  min-width: 128px;
 }
 
 .stat-card strong {
@@ -655,7 +655,7 @@ body.dark-theme .btn--secondary {
 
 .floating-card {
   position: absolute;
-  padding: 1.5rem;
+  padding: 1.25rem;
   transition: transform var(--transition), box-shadow var(--transition);
 }
 
@@ -748,7 +748,7 @@ body.dark-theme .btn--secondary {
 .trending-grid,
 .notes-grid {
   display: grid;
-  gap: 1.2rem;
+  gap: 1rem;
 }
 
 .faq-list {
@@ -764,19 +764,19 @@ body.dark-theme .btn--secondary {
 .subject-pill {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
-  padding: 1.15rem;
+  gap: 0.7rem;
+  padding: 0.95rem;
   text-align: left;
   color: var(--text);
   transition: var(--transition);
 }
 
 .subject-pill i {
-  width: 2.75rem;
-  height: 2.75rem;
+  width: 2.4rem;
+  height: 2.4rem;
   display: grid;
   place-items: center;
-  border-radius: 14px;
+  border-radius: 12px;
   color: #fff;
   background: linear-gradient(135deg, var(--primary), var(--secondary));
 }
@@ -794,7 +794,7 @@ body.dark-theme .btn--secondary {
 .trending-card,
 .note-card,
 .user-card {
-  padding: 1.35rem;
+  padding: 1.05rem;
   transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
 }
 
@@ -821,8 +821,8 @@ body.dark-theme .btn--secondary {
 .note-card__meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.7rem;
-  margin: 1rem 0;
+  gap: 0.55rem;
+  margin: 0.8rem 0;
 }
 
 .trending-card__meta span,
@@ -831,11 +831,11 @@ body.dark-theme .btn--secondary {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.45rem 0.7rem;
+  padding: 0.38rem 0.62rem;
   border-radius: 999px;
   background: rgba(91, 124, 255, 0.12);
   color: var(--primary-dark);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 700;
 }
 
@@ -949,7 +949,7 @@ body.dark-theme .faq-item[open] {
   top: 7.6rem;
   display: grid;
   gap: 1.4rem;
-  padding: 1.5rem;
+  padding: 1.25rem;
 }
 
 .profile-card__avatar-wrap {
@@ -1153,7 +1153,7 @@ body.dark-theme .profile-card__info-value {
 .upload-form,
 .auth-card,
 .feedback-form {
-  padding: 1.4rem;
+  padding: 1.15rem;
 }
 
 .feedback-form {
@@ -1168,15 +1168,15 @@ body.dark-theme .profile-card__info-value {
 .info-card {
   display: flex;
   align-items: start;
-  gap: 1rem;
+  gap: 0.85rem;
 }
 
 .info-card i {
-  width: 3rem;
-  height: 3rem;
+  width: 2.55rem;
+  height: 2.55rem;
   display: grid;
   place-items: center;
-  border-radius: 16px;
+  border-radius: 14px;
   color: #fff;
   background: linear-gradient(135deg, var(--primary), var(--accent));
 }
@@ -1235,7 +1235,7 @@ body.dark-theme .profile-card__info-value {
   gap: 1rem;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem;
+  padding: 0.85rem 0.95rem;
   margin-bottom: 1.4rem;
 }
 
@@ -1253,13 +1253,13 @@ body.dark-theme .profile-card__info-value {
 .admin-users-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1.2rem;
+  gap: 1rem;
 }
 
 .admin-feedback-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1.2rem;
+  gap: 1rem;
 }
 
 .note-card {
@@ -1290,7 +1290,9 @@ body.dark-theme .profile-card__info-value {
 .floating-card h3,
 .info-card h3,
 .user-card h3 {
-  margin: 0.6rem 0;
+  margin: 0.45rem 0;
+  font-size: 1.02rem;
+  line-height: 1.35;
 }
 
 .trending-card__cta {
@@ -1315,14 +1317,14 @@ body.dark-theme .profile-card__info-value {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  margin-top: 1rem;
+  gap: 0.75rem;
+  margin-top: 0.8rem;
 }
 
 .note-card__buttons {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: 0.55rem;
   justify-content: flex-end;
 }
 
@@ -1376,12 +1378,12 @@ body.dark-theme .status-badge--rejected {
 .user-card__meta {
   display: grid;
   gap: 0.55rem;
-  margin: 1rem 0;
+  margin: 0.8rem 0;
   color: var(--text-soft);
 }
 
 .user-card__content-types {
-  margin-bottom: 1rem;
+  margin-bottom: 0.8rem;
 }
 
 .feedback-card__message {
@@ -1420,7 +1422,7 @@ body.dark-theme .content-tag {
 }
 
 .empty-state {
-  padding: 1rem 1.25rem;
+  padding: 0.9rem 1rem;
   text-align: center;
   color: var(--text-soft);
 }
