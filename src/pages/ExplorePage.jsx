@@ -212,7 +212,29 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
                   id={`explore-note-${note.id}`}
                   className={`note-card glass-card reveal is-visible${note.id === focusNoteId ? " note-card--focused" : ""}`}
                 >
-                  <span className="note-card__chip">{note.subject}</span>
+                  <div className="note-card__topbar">
+                    <span className="note-card__chip">{note.subject}</span>
+                    <div className="note-card__icon-actions">
+                      <button
+                        type="button"
+                        className="note-card__icon-action"
+                        onClick={() => handlePreview(note)}
+                        aria-label={`Preview ${note.title}`}
+                        title="Preview"
+                      >
+                        <i className="fa-regular fa-eye"></i>
+                      </button>
+                      <button
+                        type="button"
+                        className="note-card__icon-action note-card__icon-action--primary"
+                        onClick={() => handleDownload(note.id)}
+                        aria-label={`Download ${note.title}`}
+                        title="Download"
+                      >
+                        <i className="fa-solid fa-download"></i>
+                      </button>
+                    </div>
+                  </div>
                   <h3>{note.title}</h3>
                   <p>{note.description}</p>
                   <div className="note-card__meta">
@@ -221,16 +243,6 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
                   </div>
                   <div className="note-card__actions">
                     <span className="note-card__downloads">{note.downloads} downloads</span>
-                    <div className="note-card__buttons">
-                      <button type="button" className="btn btn--secondary" onClick={() => handlePreview(note)}>
-                        <i className="fa-regular fa-eye"></i>
-                        Preview
-                      </button>
-                      <button type="button" className="btn btn--primary" onClick={() => handleDownload(note.id)}>
-                        <i className="fa-solid fa-download"></i>
-                        Download
-                      </button>
-                    </div>
                   </div>
                 </article>
               ))}
