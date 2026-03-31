@@ -48,6 +48,7 @@ export default function HomePage({ reloadKey, showToast }) {
     totalSubjects: 0,
     totalDownloads: 0
   });
+  const [trendingNotes, setTrendingNotes] = useState([]);
   const [heroSearch, setHeroSearch] = useState("");
   const [feedbackForm, setFeedbackForm] = useState({
     name: "",
@@ -59,12 +60,17 @@ export default function HomePage({ reloadKey, showToast }) {
   const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
 
-  useReveal([reloadKey]);
+  useReveal([trendingNotes.length, reloadKey]);
 
   useEffect(() => {
     async function loadHomeData() {
-      const statsResponse = await api.get("/notes/stats");
+      const [statsResponse, trendingResponse] = await Promise.all([
+        api.get("/notes/stats"),
+        api.get("/notes/trending")
+      ]);
+
       setHomeStats(statsResponse.data.summary);
+      setTrendingNotes(trendingResponse.data.notes);
     }
 
     loadHomeData().catch((error) => {
@@ -74,6 +80,7 @@ export default function HomePage({ reloadKey, showToast }) {
         totalSubjects: 0,
         totalDownloads: 0
       });
+      setTrendingNotes([]);
       showToast?.(getErrorMessage(error, "Unable to load the latest notes right now."), "error");
     });
   }, [reloadKey, showToast]);
@@ -89,6 +96,21 @@ export default function HomePage({ reloadKey, showToast }) {
   function openExplore(search = "") {
     const query = search ? `?search=${encodeURIComponent(search)}` : "";
     navigate(`/explore${query}`);
+  }
+
+  function buildTrendingExploreLink(note) {
+    const params = new URLSearchParams();
+    const searchTerm = note.title?.trim() || note.subject?.trim() || "";
+
+    if (searchTerm) {
+      params.set("search", searchTerm);
+    }
+
+    if (note.id) {
+      params.set("focus", note.id);
+    }
+
+    return `/explore?${params.toString()}`;
   }
 
   function handleFeedbackFieldChange(event) {
@@ -170,12 +192,12 @@ export default function HomePage({ reloadKey, showToast }) {
 
         <div className="hero__visual reveal">
           <div className="floating-card glass-card floating-card--main">
-            <span className="floating-card__tag">Notes Library</span>
-            <h3>Explore clean, approved study material</h3>
-            <p>Search by title or subject and jump straight into the notes you need for study and download.</p>
+            <span className="floating-card__tag">Trending</span>
+            <h3>{trendingNotes[0]?.title || "Real Notes From Your Database"}</h3>
+            <p>{trendingNotes[0]?.description || "Once notes are added, trending content appears here automatically."}</p>
             <div className="floating-card__meta">
-              <span><i className="fa-solid fa-book-open"></i> {homeStats.totalSubjects || 0} subjects</span>
-              <span><i className="fa-solid fa-download"></i> {homeStats.totalDownloads || 0} downloads</span>
+              <span><i className="fa-solid fa-book-open"></i> {trendingNotes[0]?.subject || "Study"}</span>
+              <span><i className="fa-solid fa-download"></i> {trendingNotes[0]?.downloads || 0}</span>
             </div>
           </div>
 
@@ -240,6 +262,32 @@ export default function HomePage({ reloadKey, showToast }) {
                 <i className={`fa-solid ${subject.icon}`}></i>
                 <span>{subject.label}</span>
               </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="section section--trending">
+        <div className="container">
+          <div className="section-heading reveal">
+            <span className="eyebrow">Trending Notes</span>
+            <h2>What learners are downloading right now</h2>
+          </div>
+          <div className="trending-grid">
+            {trendingNotes.map((note) => (
+              <Link
+                key={note.id}
+                to={buildTrendingExploreLink(note)}
+                className="trending-card trending-card--link glass-card reveal is-visible"
+              >
+                <span className="note-card__chip">{note.subject}</span>
+                <h3>{note.title}</h3>
+                <p>{note.description}</p>
+                <div className="trending-card__meta">
+                  <span><i className="fa-solid fa-fire"></i> Trending</span>
+                  <span><i className="fa-solid fa-download"></i> {note.downloads}</span>
+                </div>
+              </Link>
             ))}
           </div>
         </div>
