@@ -252,7 +252,7 @@ export default function QuestionPaperUploadPanel({ onPapersChanged, showToast })
               <input
                 type="text"
                 id="paperUniversity"
-                placeholder="e.g. AKTU"
+                placeholder="e.g. PTU"
                 value={form.universityName}
                 onChange={(event) => setForm((current) => ({ ...current, universityName: event.target.value }))}
                 maxLength={QUESTION_BANK_LIMITS.universityMaxLength}
