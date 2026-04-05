@@ -1612,7 +1612,7 @@ body.dark-theme .content-tag {
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
-  margin-top: 1rem;
+  margin: 0 0 0.9rem;
   flex-wrap: wrap;
 }
 
@@ -2362,7 +2362,45 @@ body.dark-theme .admin-select {
   .profile-stats-grid {
     grid-template-columns: 1fr;
   }
+
+  .preview-modal {
+    padding: 0.65rem;
+    align-items: start;
+  }
+
+  .preview-modal__panel {
+    width: 100%;
+    max-height: 92vh;
+    padding: 0.95rem;
+    border-radius: 22px;
+  }
+
+  .preview-modal__header {
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .preview-modal__actions {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    justify-content: stretch;
+    gap: 0.55rem;
+    margin-bottom: 0.75rem;
+    padding: 0.1rem 0 0.2rem;
+    background: linear-gradient(180deg, var(--surface-strong), rgba(255, 255, 255, 0));
+  }
+
+  .preview-modal__actions .btn {
+    flex: 1 1 0;
+    min-height: 2.9rem;
+  }
+
+  body.dark-theme .preview-modal__actions {
+    background: linear-gradient(180deg, rgba(12, 23, 44, 0.96), rgba(12, 23, 44, 0));
+  }
 }
+
 .content-type-switcher {
   display: inline-flex;
   gap: 0.6rem;

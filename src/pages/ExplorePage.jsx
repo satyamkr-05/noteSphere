@@ -20,6 +20,7 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [previewNote, setPreviewNote] = useState(null);
+  const [isResolvingFocusNote, setIsResolvingFocusNote] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const focusNoteId = searchParams.get("focus") || "";
   const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
@@ -112,6 +113,39 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
       targetCard.scrollIntoView({ behavior: "smooth", block: "center" });
     });
   }, [focusNoteId, isLoading, notes]);
+
+  useEffect(() => {
+    if (!focusNoteId || isLoading || isResolvingFocusNote || notes.some((note) => note.id === focusNoteId)) {
+      return;
+    }
+
+    let isCancelled = false;
+
+    async function resolveFocusedNote() {
+      try {
+        setIsResolvingFocusNote(true);
+        const response = await api.get(`/notes/${focusNoteId}`);
+
+        if (isCancelled || !response.data?.note) {
+          return;
+        }
+
+        setNotes((current) => [response.data.note, ...current.filter((note) => note.id !== focusNoteId)]);
+      } catch (_error) {
+        // Keep the existing list if the focused note is unavailable.
+      } finally {
+        if (!isCancelled) {
+          setIsResolvingFocusNote(false);
+        }
+      }
+    }
+
+    resolveFocusedNote();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [focusNoteId, isLoading, isResolvingFocusNote, notes]);
 
   function handlePreview(note) {
     if (!isAuthenticated) {

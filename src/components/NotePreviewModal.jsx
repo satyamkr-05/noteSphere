@@ -131,6 +131,17 @@ export default function NotePreviewModal({ note, onClose, showToast }) {
           </button>
         </div>
 
+        {!isLoadingPreview && previewUrl ? (
+          <div className="preview-modal__actions">
+            <button type="button" className="btn btn--secondary" onClick={handleOpenFile}>
+              Open File
+            </button>
+            <button type="button" className="btn btn--primary" onClick={handleDownloadFile}>
+              Download File
+            </button>
+          </div>
+        ) : null}
+
         <div className="preview-modal__body">
           {isLoadingPreview ? <div className="page-status glass-card">Loading preview...</div> : null}
 
@@ -155,17 +166,6 @@ export default function NotePreviewModal({ note, onClose, showToast }) {
                   ? "This note can still be opened or downloaded safely from the buttons below."
                   : "The protected file could not be loaded for preview."}
               </p>
-            </div>
-          ) : null}
-
-          {!isLoadingPreview && previewUrl ? (
-            <div className="preview-modal__actions">
-              <button type="button" className="btn btn--secondary" onClick={handleOpenFile}>
-                Open File
-              </button>
-              <button type="button" className="btn btn--primary" onClick={handleDownloadFile}>
-                Download File
-              </button>
             </div>
           ) : null}
         </div>
