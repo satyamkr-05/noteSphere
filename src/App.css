@@ -2539,6 +2539,50 @@ body.dark-theme .admin-select {
   opacity: 0.7;
 }
 
+.course-rail {
+  display: grid;
+  gap: 1rem;
+}
+
+.course-rail__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.course-rail__header h2 {
+  margin: 0;
+}
+
+.course-rail__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.course-rail__item {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.8rem 1.15rem;
+  font: inherit;
+  font-weight: 700;
+  color: inherit;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.08);
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.course-rail__item:hover {
+  transform: translateY(-1px);
+}
+
+.course-rail__item.is-selected {
+  background: rgba(255, 255, 255, 0.18);
+  outline: 1px solid rgba(255, 255, 255, 0.22);
+}
+
 @media (max-width: 768px) {
   .content-type-switcher {
     width: 100%;
