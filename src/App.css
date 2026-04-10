@@ -2522,6 +2522,11 @@ body.dark-theme .admin-select {
   transform: translateY(-2px);
 }
 
+.hierarchy-card.is-selected {
+  outline: 2px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+}
+
 .hierarchy-card__eyebrow {
   font-size: 0.76rem;
   text-transform: uppercase;

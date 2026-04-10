@@ -25,6 +25,7 @@ const initialFilters = {
 
 export default function ExplorePage({ onNotesChanged, showToast }) {
   const [notes, setNotes] = useState([]);
+  const [topNotes, setTopNotes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [previewNote, setPreviewNote] = useState(null);
@@ -134,6 +135,7 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
 
   useEffect(() => {
     loadCourses();
+    loadTopNotes();
   }, []);
 
   useEffect(() => {
@@ -193,6 +195,16 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
     } catch (error) {
       setCourses([]);
       showToast(getErrorMessage(error, "Unable to load note courses."), "error");
+    }
+  }
+
+  async function loadTopNotes() {
+    try {
+      const response = await api.get("/notes/trending");
+      setTopNotes(response.data.notes || []);
+    } catch (error) {
+      setTopNotes([]);
+      showToast(getErrorMessage(error, "Unable to load top notes."), "error");
     }
   }
 
@@ -445,7 +457,80 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
           </div>
         ) : null}
 
-        {hierarchyState.items.length > 0 ? (
+        {courses.length > 0 ? (
+          <section className="section section--compact">
+            <div className="section-heading reveal">
+              <span className="eyebrow">Courses</span>
+              <h2>Open a course first</h2>
+              <p>All uploaded courses stay visible here, then you can move into branch and notes.</p>
+            </div>
+
+            <div className="hierarchy-grid">
+              {courses.map((course) => (
+                <button
+                  key={`course-${course}`}
+                  type="button"
+                  className={`hierarchy-card glass-card reveal is-visible${filters.courseName === course ? " is-selected" : ""}`}
+                  onClick={() => updateFilter("courseName", course)}
+                >
+                  <span className="hierarchy-card__eyebrow">Course</span>
+                  <strong>{course}</strong>
+                  <span className="hierarchy-card__hint">{filters.courseName === course ? "Opened" : "Open"}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {topNotes.length > 0 ? (
+          <section className="section section--compact">
+            <div className="section-heading reveal">
+              <span className="eyebrow">Top Notes</span>
+              <h2>Popular notes right now</h2>
+              <p>These stay visible outside the hierarchy so users can quickly open useful content.</p>
+            </div>
+
+            <div className="notes-grid notes-grid--subject">
+              {topNotes.map((note) => (
+                <article key={`top-${note.id}`} className="note-card glass-card reveal is-visible">
+                  <div className="note-card__topbar">
+                    <span className="note-card__chip">{note.subject}</span>
+                    <div className="note-card__icon-actions">
+                      <button
+                        type="button"
+                        className="note-card__icon-action"
+                        onClick={() => handlePreview(note)}
+                        aria-label={`Preview ${note.title}`}
+                        title="Preview"
+                      >
+                        <i className="fa-regular fa-eye"></i>
+                      </button>
+                      <button
+                        type="button"
+                        className="note-card__icon-action note-card__icon-action--primary"
+                        onClick={() => handleDownload(note.id)}
+                        aria-label={`Download ${note.title}`}
+                        title="Download"
+                      >
+                        <i className="fa-solid fa-download"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <h3>{note.title}</h3>
+                  <p>{note.topicName || note.description || note.academicPath || "Popular note"}</p>
+                  <div className="note-card__meta">
+                    <span><i className="fa-solid fa-building-columns"></i> {note.academicPath || note.subject}</span>
+                  </div>
+                  <div className="note-card__actions">
+                    <span className="note-card__downloads">{note.downloads} downloads</span>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {hierarchyState.level !== "course" && hierarchyState.items.length > 0 ? (
           <section className="section section--compact">
             <div className="section-heading reveal">
               <span className="eyebrow">Browse</span>
