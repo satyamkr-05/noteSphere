@@ -42,6 +42,8 @@ function AppContent({ isDark, onToggleTheme, reloadKey, showToast, triggerReload
     <Layout isDark={isDark} onToggleTheme={onToggleTheme} onLogout={handleLogout} showToast={showToast}>
       <Routes>
         <Route path="/" element={<HomePage reloadKey={reloadKey} showToast={showToast} />} />
+        <Route path="/notes" element={<ExplorePage onNotesChanged={triggerReload} showToast={showToast} />} />
+        <Route path="/notes/:courseSlug" element={<ExplorePage onNotesChanged={triggerReload} showToast={showToast} />} />
         <Route path="/explore" element={<ExplorePage onNotesChanged={triggerReload} showToast={showToast} />} />
         <Route path="/question-bank" element={<QuestionBankPage showToast={showToast} />} />
         <Route path="/auth" element={<AuthPage showToast={showToast} />} />
