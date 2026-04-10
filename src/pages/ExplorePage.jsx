@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import NotePreviewModal from "../components/NotePreviewModal";
 import PaginationControls from "../components/PaginationControls";
 import { useAuth } from "../context/AuthContext";
@@ -26,6 +26,7 @@ const initialFilters = {
 };
 
 export default function ExplorePage({ onNotesChanged, showToast }) {
+  const { courseSlug = "" } = useParams();
   const [notes, setNotes] = useState([]);
   const [topNotes, setTopNotes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -58,6 +59,12 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
         .sort((left, right) => left.localeCompare(right)),
     [courses]
   );
+
+  const routedCourseName = useMemo(
+    () => resolveCourseNameFromSlug(courseSlug, visibleCourses),
+    [courseSlug, visibleCourses]
+  );
+  const isDedicatedCoursePage = Boolean(courseSlug);
 
   const hierarchyState = useMemo(() => {
     if (!filters.courseName) {
@@ -155,6 +162,28 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
     loadCourses();
     loadTopNotes();
   }, []);
+
+  useEffect(() => {
+    if (!routedCourseName) {
+      return;
+    }
+
+    setFilters((current) => {
+      if (current.courseName === routedCourseName) {
+        return current;
+      }
+
+      return {
+        ...current,
+        courseName: routedCourseName,
+        branchName: "",
+        specializationName: "",
+        subject: "",
+        unitName: ""
+      };
+    });
+    setCurrentPage(1);
+  }, [routedCourseName]);
 
   useEffect(() => {
     if (!filters.courseName) {
@@ -302,7 +331,7 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
       setNotes(response.data.notes || []);
       setPagination(response.data.pagination || initialPagination);
       setLoadError("");
-      setSearchParams(buildSearchParams(searchQuery, filters, currentPage));
+      setSearchParams(buildSearchParams(searchQuery, filters, currentPage, !isDedicatedCoursePage));
 
       if (response.data.pagination?.currentPage && response.data.pagination.currentPage !== currentPage) {
         setCurrentPage(response.data.pagination.currentPage);
@@ -322,6 +351,10 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
       const nextFilters = { ...current, [name]: value };
 
       if (name === "courseName") {
+        if (isDedicatedCoursePage && current.courseName === value) {
+          return current;
+        }
+
         nextFilters.branchName = "";
         nextFilters.specializationName = "";
         nextFilters.subject = "";
@@ -363,6 +396,10 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
     }
   }
 
+  function openCoursePage(course) {
+    navigate(`/notes/${slugifyCourse(course)}`);
+  }
+
   function handleBreadcrumbClick(index) {
     setCurrentPage(1);
     setFilters((current) => {
@@ -378,7 +415,10 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
 
   function clearFilters() {
     setSearchQuery("");
-    setFilters(initialFilters);
+    setFilters((current) => ({
+      ...initialFilters,
+      ...(isDedicatedCoursePage && current.courseName ? { courseName: current.courseName } : {})
+    }));
     setCurrentPage(1);
   }
 
@@ -431,7 +471,7 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
       <div className="container">
         <div className="section-heading reveal">
           <span className="eyebrow">Explore Notes</span>
-          <h2>Open notes step by step</h2>
+          <h2>{isDedicatedCoursePage && filters.courseName ? `${filters.courseName} Notes` : "Open notes step by step"}</h2>
         </div>
 
         <div className="question-bank-toolbar glass-card reveal">
@@ -488,7 +528,7 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
                     key={`course-${course}`}
                     type="button"
                     className={`course-rail__item${filters.courseName === course ? " is-selected" : ""}`}
-                    onClick={() => updateFilter("courseName", course)}
+                    onClick={() => openCoursePage(course)}
                   >
                     {course}
                   </button>
@@ -645,11 +685,11 @@ function getPageFromQuery(pageValue) {
   return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : 1;
 }
 
-function buildSearchParams(searchQuery, filters, currentPage) {
+function buildSearchParams(searchQuery, filters, currentPage, includeCourse = true) {
   return searchQuery || currentPage > 1 || Object.values(filters).some(Boolean)
     ? {
         ...(searchQuery ? { search: searchQuery } : {}),
-        ...(filters.courseName ? { course: filters.courseName } : {}),
+        ...(includeCourse && filters.courseName ? { course: filters.courseName } : {}),
         ...(filters.branchName ? { branch: filters.branchName } : {}),
         ...(filters.specializationName ? { specialization: filters.specializationName } : {}),
         ...(filters.subject ? { subject: filters.subject } : {}),
@@ -669,4 +709,38 @@ function formatHierarchyLevel(level) {
   };
 
   return labels[level] || "Item";
+}
+
+function slugifyCourse(course) {
+  return course
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function resolveCourseNameFromSlug(courseSlug, courses) {
+  if (!courseSlug) {
+    return "";
+  }
+
+  const matchedCourse = courses.find((course) => slugifyCourse(course) === courseSlug);
+
+  if (matchedCourse) {
+    return matchedCourse;
+  }
+
+  if (courseSlug === "b-tech" || courseSlug === "btech") {
+    return "B.Tech";
+  }
+
+  if (courseSlug === "mba") {
+    return "MBA";
+  }
+
+  if (courseSlug === "diploma") {
+    return "Diploma";
+  }
+
+  return "";
 }

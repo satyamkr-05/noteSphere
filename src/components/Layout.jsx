@@ -120,7 +120,7 @@ export default function Layout({ children, isDark, onLogout, onToggleTheme, show
 
           <div className={`nav-menu${navOpen ? " is-open" : ""}`} id="navMenu">
             <NavLink to="/" onClick={closeNav}>Home</NavLink>
-            <NavLink to="/explore" onClick={closeNav}>Notes</NavLink>
+            <NavLink to="/notes" onClick={closeNav}>Notes</NavLink>
             <NavLink to="/question-bank" onClick={closeNav}>Question Bank</NavLink>
             <NavLink to="/upload" onClick={closeNav}>Upload</NavLink>
             {user?.isAdmin ? <NavLink to="/admin" onClick={closeNav}>Admin</NavLink> : null}
@@ -174,7 +174,7 @@ export default function Layout({ children, isDark, onLogout, onToggleTheme, show
 
             <div className="footer-links">
               <NavLink to="/">Home</NavLink>
-              <NavLink to="/explore">Notes</NavLink>
+              <NavLink to="/notes">Notes</NavLink>
               <NavLink to="/question-bank">Question Bank</NavLink>
               <NavLink to="/upload">Upload</NavLink>
               {user?.isAdmin ? <NavLink to="/admin">Admin</NavLink> : null}
