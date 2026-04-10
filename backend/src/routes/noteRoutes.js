@@ -4,6 +4,7 @@ import {
   deleteNote,
   getMyNotes,
   getNoteById,
+  getNoteCourses,
   getNotes,
   getPublicNoteStats,
   getTrendingNotes,
@@ -17,6 +18,7 @@ import { upload } from "../config/multer.js";
 const router = express.Router();
 
 router.get("/", getNotes);
+router.get("/courses", getNoteCourses);
 router.get("/stats", getPublicNoteStats);
 router.get("/trending", getTrendingNotes);
 router.get("/mine", protect, getMyNotes);

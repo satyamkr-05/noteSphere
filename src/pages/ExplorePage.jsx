@@ -17,13 +17,16 @@ const initialPagination = {
 
 export default function ExplorePage({ onNotesChanged, showToast }) {
   const [notes, setNotes] = useState([]);
+  const [courses, setCourses] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [coursesError, setCoursesError] = useState("");
   const [previewNote, setPreviewNote] = useState(null);
   const [isResolvingFocusNote, setIsResolvingFocusNote] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const focusNoteId = searchParams.get("focus") || "";
   const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
+  const [selectedCourse, setSelectedCourse] = useState(searchParams.get("course") || "");
   const [currentPage, setCurrentPage] = useState(getPageFromQuery(searchParams.get("page")));
   const [pagination, setPagination] = useState(initialPagination);
   const { isAuthenticated } = useAuth();
@@ -48,12 +51,39 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
   useReveal([notes.length, isLoading]);
 
   useEffect(() => {
+    let isCancelled = false;
+
+    async function loadCourses() {
+      try {
+        const response = await api.get("/notes/courses");
+
+        if (!isCancelled) {
+          setCourses(response.data.courses || []);
+          setCoursesError("");
+        }
+      } catch (error) {
+        if (!isCancelled) {
+          setCourses([]);
+          setCoursesError(getErrorMessage(error, "Unable to load courses right now."));
+        }
+      }
+    }
+
+    loadCourses();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
     const timer = window.setTimeout(async () => {
       setIsLoading(true);
       try {
         const response = await api.get("/notes", {
           params: {
             ...(searchQuery ? { q: searchQuery } : {}),
+            ...(selectedCourse ? { courseName: selectedCourse } : {}),
             page: currentPage,
             limit: initialPagination.limit
           }
@@ -62,9 +92,10 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
         setPagination(response.data.pagination || initialPagination);
         setLoadError("");
         setSearchParams(
-          searchQuery || currentPage > 1 || focusNoteId
+          searchQuery || selectedCourse || currentPage > 1 || focusNoteId
             ? {
                 ...(searchQuery ? { search: searchQuery } : {}),
+                ...(selectedCourse ? { course: selectedCourse } : {}),
                 ...(currentPage > 1 ? { page: String(currentPage) } : {}),
                 ...(focusNoteId ? { focus: focusNoteId } : {})
               }
@@ -83,7 +114,7 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
     }, 250);
 
     return () => window.clearTimeout(timer);
-  }, [currentPage, focusNoteId, searchQuery, setSearchParams]);
+  }, [currentPage, focusNoteId, searchQuery, selectedCourse, setSearchParams]);
 
   useEffect(() => {
     const noteIdToDownload = searchParams.get("download");
@@ -214,17 +245,53 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
               }}
             />
           </div>
-          <button
-            type="button"
-            className="btn btn--secondary"
-            onClick={() => {
-              setSearchQuery("");
-              setCurrentPage(1);
-            }}
-          >
-            Clear
-          </button>
+          <div className="explore-toolbar__actions">
+            {selectedCourse ? (
+              <button
+                type="button"
+                className="btn btn--ghost"
+                onClick={() => {
+                  setSelectedCourse("");
+                  setCurrentPage(1);
+                }}
+              >
+                {selectedCourse}
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className="btn btn--secondary"
+              onClick={() => {
+                setSearchQuery("");
+                setSelectedCourse("");
+                setCurrentPage(1);
+              }}
+            >
+              Clear
+            </button>
+          </div>
         </div>
+
+        {courses.length > 0 ? (
+          <div className="course-shortcuts glass-card reveal is-visible">
+            {courses.map((courseName) => (
+              <button
+                key={courseName}
+                type="button"
+                className={`course-shortcuts__button${selectedCourse === courseName ? " is-active" : ""}`}
+                onClick={() => {
+                  setSelectedCourse((current) => (current === courseName ? "" : courseName));
+                  setCurrentPage(1);
+                }}
+              >
+                {courseName}
+              </button>
+            ))}
+          </div>
+        ) : null}
+
+        {!isLoading && coursesError ? <div className="page-status glass-card">{coursesError}</div> : null}
 
         {isLoading ? <div className="page-status glass-card">Loading notes...</div> : null}
         {!isLoading && loadError ? <div className="page-status glass-card">{loadError}</div> : null}

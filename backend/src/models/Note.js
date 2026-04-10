@@ -7,10 +7,35 @@ const noteSchema = new mongoose.Schema(
       required: true,
       trim: true
     },
+    courseName: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    branchName: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    specializationName: {
+      type: String,
+      trim: true,
+      default: ""
+    },
     subject: {
       type: String,
       required: true,
       trim: true
+    },
+    unitName: {
+      type: String,
+      trim: true,
+      default: ""
+    },
+    topicName: {
+      type: String,
+      trim: true,
+      default: ""
     },
     description: {
       type: String,
@@ -66,8 +91,8 @@ noteSchema.index({ status: 1, featured: -1, createdAt: -1 });
 noteSchema.index({ status: 1, downloads: -1, createdAt: -1 });
 noteSchema.index({ uploadedBy: 1, createdAt: -1 });
 noteSchema.index({ subject: 1, status: 1, createdAt: -1 });
+noteSchema.index({ courseName: 1, status: 1, createdAt: -1 });
 noteSchema.index({ fileHash: 1 });
-noteSchema.index({ title: "text", subject: "text", description: "text" });
 
 const Note = mongoose.model("Note", noteSchema);
 export default Note;

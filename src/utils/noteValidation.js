@@ -7,6 +7,8 @@ import {
 
 const noteFields = [
   ["title", "Title", NOTE_LIMITS.titleMaxLength],
+  ["courseName", "Course", NOTE_LIMITS.courseMaxLength],
+  ["branchName", "Branch", NOTE_LIMITS.branchMaxLength],
   ["subject", "Subject", NOTE_LIMITS.subjectMaxLength]
 ];
 
@@ -17,7 +19,12 @@ export function formatCharacterCount(value, maxLength) {
 export function validateNoteForm(form) {
   const normalizedForm = {
     title: form.title.trim(),
+    courseName: form.courseName.trim(),
+    branchName: form.branchName.trim(),
+    specializationName: form.specializationName.trim(),
     subject: form.subject.trim(),
+    unitName: form.unitName.trim(),
+    topicName: form.topicName.trim(),
     description: form.description.trim(),
     featured: Boolean(form.featured)
   };
@@ -41,6 +48,27 @@ export function validateNoteForm(form) {
   if (normalizedForm.description.length > NOTE_LIMITS.descriptionMaxLength) {
     return {
       error: `Description must be ${NOTE_LIMITS.descriptionMaxLength} characters or fewer.`,
+      value: normalizedForm
+    };
+  }
+
+  if (normalizedForm.specializationName.length > NOTE_LIMITS.specializationMaxLength) {
+    return {
+      error: `Specialization must be ${NOTE_LIMITS.specializationMaxLength} characters or fewer.`,
+      value: normalizedForm
+    };
+  }
+
+  if (normalizedForm.unitName.length > NOTE_LIMITS.unitMaxLength) {
+    return {
+      error: `Unit or module must be ${NOTE_LIMITS.unitMaxLength} characters or fewer.`,
+      value: normalizedForm
+    };
+  }
+
+  if (normalizedForm.topicName.length > NOTE_LIMITS.topicMaxLength) {
+    return {
+      error: `Topic must be ${NOTE_LIMITS.topicMaxLength} characters or fewer.`,
       value: normalizedForm
     };
   }
