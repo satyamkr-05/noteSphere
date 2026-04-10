@@ -95,7 +95,7 @@ export default function HomePage({ reloadKey, showToast }) {
 
   function openExplore(search = "") {
     const query = search ? `?search=${encodeURIComponent(search)}` : "";
-    navigate(`/notes${query}`);
+    navigate(`/explore${query}`);
   }
 
   function buildTrendingExploreLink(note) {
@@ -110,7 +110,7 @@ export default function HomePage({ reloadKey, showToast }) {
       params.set("focus", note.id);
     }
 
-    return `/notes?${params.toString()}`;
+    return `/explore?${params.toString()}`;
   }
 
   function handleFeedbackFieldChange(event) {
@@ -152,7 +152,7 @@ export default function HomePage({ reloadKey, showToast }) {
 
           <div className="hero__actions">
             <Link to="/upload" className="btn btn--primary">Upload Notes</Link>
-            <Link to="/notes" className="btn btn--secondary">Browse Notes</Link>
+            <Link to="/explore" className="btn btn--secondary">Browse Notes</Link>
             <Link to="/question-bank" className="btn btn--secondary">Question Bank</Link>
             {isAuthenticated ? (
               <Link to="/dashboard" className="btn btn--secondary">Dashboard</Link>
@@ -228,7 +228,7 @@ export default function HomePage({ reloadKey, showToast }) {
               <div>
                 <h3>Notes</h3>
                 <p>Browse shared study material by subject and title.</p>
-                <Link to="/notes" className="btn btn--secondary">Open Notes</Link>
+                <Link to="/explore" className="btn btn--secondary">Open Notes</Link>
               </div>
             </article>
             <article className="info-card glass-card reveal is-visible">
