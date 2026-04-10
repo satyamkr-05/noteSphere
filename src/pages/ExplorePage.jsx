@@ -459,24 +459,25 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
 
         {courses.length > 0 ? (
           <section className="section section--compact">
-            <div className="course-rail glass-card reveal is-visible">
-              <div className="course-rail__header">
-                <span className="eyebrow">Courses</span>
-                <h2>Open By Course</h2>
-              </div>
+            <div className="section-heading reveal">
+              <span className="eyebrow">Courses</span>
+              <h2>Open a course first</h2>
+              <p>All uploaded courses stay visible here, then you can move into branch and notes.</p>
+            </div>
 
-              <div className="course-rail__list">
-                {courses.map((course) => (
-                  <button
-                    key={`course-${course}`}
-                    type="button"
-                    className={`course-rail__item${filters.courseName === course ? " is-selected" : ""}`}
-                    onClick={() => updateFilter("courseName", course)}
-                  >
-                    {course}
-                  </button>
-                ))}
-              </div>
+            <div className="hierarchy-grid">
+              {courses.map((course) => (
+                <button
+                  key={`course-${course}`}
+                  type="button"
+                  className={`hierarchy-card glass-card reveal is-visible${filters.courseName === course ? " is-selected" : ""}`}
+                  onClick={() => updateFilter("courseName", course)}
+                >
+                  <span className="hierarchy-card__eyebrow">Course</span>
+                  <strong>{course}</strong>
+                  <span className="hierarchy-card__hint">{filters.courseName === course ? "Opened" : "Open"}</span>
+                </button>
+              ))}
             </div>
           </section>
         ) : null}
