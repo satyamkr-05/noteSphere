@@ -2445,6 +2445,24 @@ body.dark-theme .admin-select {
   display: grid;
   gap: 1rem;
   margin-bottom: 1.5rem;
+  padding: 1rem 1.1rem;
+  border-radius: 24px;
+}
+
+.question-bank-toolbar .search-field {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  padding: 0.95rem 1rem;
+}
+
+.question-bank-toolbar .search-field input {
+  font-size: 1rem;
+}
+
+.question-bank-toolbar .search-field:focus-within {
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06);
 }
 
 .explore-toolbar__actions {
@@ -2542,6 +2560,8 @@ body.dark-theme .admin-select {
 .course-rail {
   display: grid;
   gap: 1rem;
+  padding: 1rem 1.1rem;
+  border-radius: 24px;
 }
 
 .course-rail__header {
@@ -2563,24 +2583,25 @@ body.dark-theme .admin-select {
 }
 
 .course-rail__item {
-  border: 0;
-  border-radius: 999px;
-  padding: 0.8rem 1.15rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 0.95rem 1.2rem;
   font: inherit;
   font-weight: 700;
   color: inherit;
   cursor: pointer;
-  background: rgba(255, 255, 255, 0.08);
-  transition: transform 0.2s ease, background-color 0.2s ease;
+  background: rgba(255, 255, 255, 0.06);
+  transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .course-rail__item:hover {
   transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
 .course-rail__item.is-selected {
-  background: rgba(255, 255, 255, 0.18);
-  outline: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.24);
 }
 
 @media (max-width: 768px) {

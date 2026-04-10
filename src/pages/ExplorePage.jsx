@@ -15,6 +15,8 @@ const initialPagination = {
   hasNextPage: false
 };
 
+const DEFAULT_COURSES = ["B.Tech", "MBA", "Diploma"];
+
 const initialFilters = {
   courseName: "",
   branchName: "",
@@ -48,6 +50,14 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const visibleCourses = useMemo(
+    () =>
+      Array.from(new Set([...DEFAULT_COURSES, ...courses]))
+        .filter(Boolean)
+        .sort((left, right) => left.localeCompare(right)),
+    [courses]
+  );
 
   const hierarchyState = useMemo(() => {
     if (!filters.courseName) {
@@ -130,6 +140,14 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
 
     return Array.from(groups.entries()).sort((left, right) => left[0].localeCompare(right[0]));
   }, [notes]);
+
+  const topSectionNotes = useMemo(() => {
+    if (searchQuery.trim()) {
+      return notes.slice(0, 4);
+    }
+
+    return topNotes.slice(0, 4);
+  }, [notes, searchQuery, topNotes]);
 
   useReveal([notes.length, hierarchyState.level, filters.courseName, filters.subject, isLoading]);
 
@@ -414,7 +432,6 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
         <div className="section-heading reveal">
           <span className="eyebrow">Explore Notes</span>
           <h2>Open notes step by step</h2>
-          <p>Start from course, then move into branch, specialization, subject, and unit.</p>
         </div>
 
         <div className="question-bank-toolbar glass-card reveal">
@@ -457,7 +474,7 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
           </div>
         ) : null}
 
-        {courses.length > 0 ? (
+        {visibleCourses.length > 0 ? (
           <section className="section section--compact">
             <div className="course-rail glass-card reveal is-visible">
               <div className="course-rail__header">
@@ -466,7 +483,7 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
               </div>
 
               <div className="course-rail__list">
-                {courses.map((course) => (
+                {visibleCourses.map((course) => (
                   <button
                     key={`course-${course}`}
                     type="button"
@@ -481,16 +498,15 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
           </section>
         ) : null}
 
-        {topNotes.length > 0 ? (
+        {topSectionNotes.length > 0 ? (
           <section className="section section--compact">
             <div className="section-heading reveal">
-              <span className="eyebrow">Top Notes</span>
-              <h2>Popular notes right now</h2>
-              <p>These stay visible outside the hierarchy so users can quickly open useful content.</p>
+              <span className="eyebrow">{searchQuery.trim() ? "Search" : "Top Notes"}</span>
+              <h2>{searchQuery.trim() ? "Relevant Notes" : "Popular Notes"}</h2>
             </div>
 
             <div className="notes-grid notes-grid--subject">
-              {topNotes.map((note) => (
+              {topSectionNotes.map((note) => (
                 <article key={`top-${note.id}`} className="note-card glass-card reveal is-visible">
                   <div className="note-card__topbar">
                     <span className="note-card__chip">{note.subject}</span>
@@ -516,10 +532,7 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
                     </div>
                   </div>
                   <h3>{note.title}</h3>
-                  <p>{note.topicName || note.description || note.academicPath || "Popular note"}</p>
-                  <div className="note-card__meta">
-                    <span><i className="fa-solid fa-building-columns"></i> {note.academicPath || note.subject}</span>
-                  </div>
+                  <p>{note.topicName || note.description || note.subject}</p>
                   <div className="note-card__actions">
                     <span className="note-card__downloads">{note.downloads} downloads</span>
                   </div>
@@ -534,7 +547,6 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
             <div className="section-heading reveal">
               <span className="eyebrow">Browse</span>
               <h2>{hierarchyState.title}</h2>
-              <p>{hierarchyState.description}</p>
             </div>
 
             <div className="hierarchy-grid">
@@ -597,9 +609,6 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
                       </div>
                       <h3>{note.title}</h3>
                       <p>{note.topicName || note.description || "Structured class notes"}</p>
-                      <div className="note-card__meta">
-                        <span><i className="fa-solid fa-building-columns"></i> {note.academicPath}</span>
-                      </div>
                       <div className="note-card__meta">
                         <span><i className="fa-solid fa-layer-group"></i> {note.unitName || "General unit"}</span>
                         <span><i className="fa-solid fa-book-open"></i> {note.topicName || note.subject}</span>
