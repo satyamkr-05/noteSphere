@@ -2,11 +2,16 @@ import express from "express";
 import {
   createNote,
   deleteNote,
+  getNoteBranches,
+  getNoteCourses,
   getMyNotes,
   getNoteById,
   getNotes,
+  getNoteSpecializations,
   getPublicNoteStats,
+  getNoteSubjects,
   getTrendingNotes,
+  getNoteUnits,
   registerDownload,
   streamNoteFile,
   updateNote
@@ -17,6 +22,11 @@ import { upload } from "../config/multer.js";
 const router = express.Router();
 
 router.get("/", getNotes);
+router.get("/courses", getNoteCourses);
+router.get("/branches", getNoteBranches);
+router.get("/specializations", getNoteSpecializations);
+router.get("/subjects", getNoteSubjects);
+router.get("/units", getNoteUnits);
 router.get("/stats", getPublicNoteStats);
 router.get("/trending", getTrendingNotes);
 router.get("/mine", protect, getMyNotes);

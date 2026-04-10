@@ -11,10 +11,25 @@ function serializePerson(person) {
 }
 
 export function serializeNote(req, note) {
+  const courseName = note.courseName?.trim() || "General";
+  const branchName = note.branchName?.trim() || "General";
+  const specializationName = note.specializationName?.trim() || "";
+  const subject = note.subject?.trim() || "General";
+  const unitName = note.unitName?.trim() || "";
+  const topicName = note.topicName?.trim() || "";
+  const academicPath = [courseName, branchName, specializationName, subject].filter(Boolean).join(" > ");
+
   return {
     id: note._id,
     title: note.title,
-    subject: note.subject,
+    courseName,
+    branchName,
+    specializationName,
+    subject,
+    unitName,
+    topicName,
+    academicPath,
+    unitPath: [academicPath, unitName].filter(Boolean).join(" > "),
     description: note.description,
     fileName: note.fileName,
     downloads: note.downloads,

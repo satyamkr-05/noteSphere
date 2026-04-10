@@ -10,7 +10,12 @@ import {
 
 export const NOTE_LIMITS = Object.freeze({
   titleMaxLength: 100,
+  courseMaxLength: 60,
+  branchMaxLength: 60,
+  specializationMaxLength: 80,
   subjectMaxLength: 60,
+  unitMaxLength: 60,
+  topicMaxLength: 80,
   descriptionMaxLength: 500,
   fileSizeBytes: NOTE_FILE_SIZE_BYTES
 });
