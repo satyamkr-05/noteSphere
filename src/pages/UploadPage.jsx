@@ -18,12 +18,7 @@ import {
 
 const initialForm = {
   title: "",
-  courseName: "",
-  branchName: "",
-  specializationName: "",
   subject: "",
-  unitName: "",
-  topicName: "",
   description: "",
   featured: false
 };
@@ -128,12 +123,7 @@ export default function UploadPage({ onNotesChanged, showToast }) {
 
     const payload = new FormData();
     payload.append("title", value.title);
-    payload.append("courseName", value.courseName);
-    payload.append("branchName", value.branchName);
-    payload.append("specializationName", value.specializationName);
     payload.append("subject", value.subject);
-    payload.append("unitName", value.unitName);
-    payload.append("topicName", value.topicName);
     payload.append("description", value.description);
     payload.append("featured", String(value.featured));
     if (file) {
@@ -165,12 +155,7 @@ export default function UploadPage({ onNotesChanged, showToast }) {
     setEditingId(note.id);
     setForm({
       title: note.title,
-      courseName: note.courseName || "",
-      branchName: note.branchName || "",
-      specializationName: note.specializationName || "",
       subject: note.subject,
-      unitName: note.unitName || "",
-      topicName: note.topicName || "",
       description: note.description,
       featured: note.featured
     });
@@ -265,46 +250,6 @@ export default function UploadPage({ onNotesChanged, showToast }) {
               </small>
             </div>
 
-            <div className="question-bank-form-grid">
-              <div className="form-group">
-                <label htmlFor="noteCourse">Course</label>
-                <input
-                  type="text"
-                  id="noteCourse"
-                  placeholder="e.g. B.Tech, MBA, Diploma"
-                  value={form.courseName}
-                  onChange={(event) => setForm((current) => ({ ...current, courseName: event.target.value }))}
-                  maxLength={NOTE_LIMITS.courseMaxLength}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="noteBranch">Branch</label>
-                <input
-                  type="text"
-                  id="noteBranch"
-                  placeholder="e.g. CSE, Civil, Mechanical"
-                  value={form.branchName}
-                  onChange={(event) => setForm((current) => ({ ...current, branchName: event.target.value }))}
-                  maxLength={NOTE_LIMITS.branchMaxLength}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="noteSpecialization">Specialization</label>
-                <input
-                  type="text"
-                  id="noteSpecialization"
-                  placeholder="e.g. AI & ML, DS, Cyber Security"
-                  value={form.specializationName}
-                  onChange={(event) => setForm((current) => ({ ...current, specializationName: event.target.value }))}
-                  maxLength={NOTE_LIMITS.specializationMaxLength}
-                />
-              </div>
-            </div>
-
             <div className="form-group">
               <label htmlFor="noteSubject">Subject</label>
               <input
@@ -320,32 +265,6 @@ export default function UploadPage({ onNotesChanged, showToast }) {
                 <span>Add the subject so users can find topic-related notes more easily.</span>
                 <span>{formatCharacterCount(form.subject, NOTE_LIMITS.subjectMaxLength)}</span>
               </small>
-            </div>
-
-            <div className="question-bank-form-grid">
-              <div className="form-group">
-                <label htmlFor="noteUnit">Unit or Module</label>
-                <input
-                  type="text"
-                  id="noteUnit"
-                  placeholder="e.g. Unit 1, Module 2"
-                  value={form.unitName}
-                  onChange={(event) => setForm((current) => ({ ...current, unitName: event.target.value }))}
-                  maxLength={NOTE_LIMITS.unitMaxLength}
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="noteTopic">Topic</label>
-                <input
-                  type="text"
-                  id="noteTopic"
-                  placeholder="e.g. Arrays, Sorting, DBMS Basics"
-                  value={form.topicName}
-                  onChange={(event) => setForm((current) => ({ ...current, topicName: event.target.value }))}
-                  maxLength={NOTE_LIMITS.topicMaxLength}
-                />
-              </div>
             </div>
 
             <div className="form-group">
@@ -430,11 +349,7 @@ export default function UploadPage({ onNotesChanged, showToast }) {
                   </button>
                 </div>
                 <h3>{note.title}</h3>
-                <p>{note.academicPath}</p>
-                <div className="note-card__meta">
-                  <span><i className="fa-solid fa-layer-group"></i> {note.unitName || "General notes"}</span>
-                  <span><i className="fa-solid fa-book-open"></i> {note.topicName || note.subject}</span>
-                </div>
+                <p>{note.description}</p>
                 <div className="note-card__meta">
                   <span><i className="fa-solid fa-file-lines"></i> {note.fileName}</span>
                   <span><i className="fa-solid fa-download"></i> {note.downloads}</span>

@@ -2447,11 +2447,6 @@ body.dark-theme .admin-select {
   margin-bottom: 1.5rem;
 }
 
-.explore-toolbar__actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
 .question-bank-breadcrumb {
   display: flex;
   flex-wrap: wrap;
@@ -2472,76 +2467,10 @@ body.dark-theme .admin-select {
   margin-top: 1rem;
 }
 
-.hierarchy-breadcrumb {
-  display: grid;
-  gap: 0.8rem;
-  margin-bottom: 1.5rem;
-}
-
-.hierarchy-breadcrumb__label {
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  opacity: 0.7;
-}
-
-.hierarchy-breadcrumb__items {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-
-.hierarchy-breadcrumb__item {
-  border: 0;
-  background: rgba(255, 255, 255, 0.08);
-  color: inherit;
-  padding: 0.7rem 1rem;
-  border-radius: 999px;
-  font: inherit;
-  cursor: pointer;
-}
-
-.hierarchy-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1rem;
-}
-
-.hierarchy-card {
-  border: 0;
-  color: inherit;
-  background: transparent;
-  text-align: left;
-  display: grid;
-  gap: 0.6rem;
-  cursor: pointer;
-  transition: transform 0.2s ease, border-color 0.2s ease;
-}
-
-.hierarchy-card:hover {
-  transform: translateY(-2px);
-}
-
-.hierarchy-card__eyebrow {
-  font-size: 0.76rem;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  opacity: 0.72;
-}
-
-.hierarchy-card__hint {
-  font-size: 0.92rem;
-  opacity: 0.7;
-}
-
 @media (max-width: 768px) {
   .content-type-switcher {
     width: 100%;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .explore-toolbar__actions {
-    justify-content: stretch;
   }
 }

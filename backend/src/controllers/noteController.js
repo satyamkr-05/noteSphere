@@ -64,63 +64,23 @@ function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function applyExactMatch(filter, field, value) {
-  const normalizedValue = normalizeText(value);
-
-  if (!normalizedValue) {
-    return;
-  }
-
-  filter[field] = { $regex: `^${escapeRegExp(normalizedValue)}$`, $options: "i" };
-}
-
-function buildApprovedNoteFilter({
-  q = "",
-  courseName = "",
-  branchName = "",
-  specializationName = "",
-  subject = "",
-  unitName = "",
-  topicName = ""
-}) {
+function buildApprovedNoteFilter({ q = "", subject = "" }) {
   const filter = { status: "approved" };
   const normalizedQuery = q.trim();
+  const normalizedSubject = subject.trim();
 
   if (normalizedQuery) {
-    const searchRegex = new RegExp(escapeRegExp(normalizedQuery), "i");
-    filter.$or = [
-      { title: searchRegex },
-      { courseName: searchRegex },
-      { branchName: searchRegex },
-      { specializationName: searchRegex },
-      { subject: searchRegex },
-      { unitName: searchRegex },
-      { topicName: searchRegex },
-      { description: searchRegex }
-    ];
+    filter.$text = { $search: normalizedQuery };
   }
 
-  applyExactMatch(filter, "courseName", courseName);
-  applyExactMatch(filter, "branchName", branchName);
-  applyExactMatch(filter, "specializationName", specializationName);
-  applyExactMatch(filter, "subject", subject);
-  applyExactMatch(filter, "unitName", unitName);
-  applyExactMatch(filter, "topicName", topicName);
+  if (normalizedSubject) {
+    filter.subject = { $regex: `^${escapeRegExp(normalizedSubject)}$`, $options: "i" };
+  }
 
   return {
     filter,
     hasSearchQuery: Boolean(normalizedQuery)
   };
-}
-
-function buildDistinctApprovedNoteFilter(query = {}) {
-  const filter = { status: "approved" };
-  applyExactMatch(filter, "courseName", query.courseName);
-  applyExactMatch(filter, "branchName", query.branchName);
-  applyExactMatch(filter, "specializationName", query.specializationName);
-  applyExactMatch(filter, "subject", query.subject);
-  applyExactMatch(filter, "unitName", query.unitName);
-  return filter;
 }
 
 async function populateNoteRelations(note) {
@@ -200,10 +160,17 @@ export const getNotes = asyncHandler(async (req, res) => {
   const totalItems = await Note.countDocuments(filter);
   const pagination = buildPagination(requestedPagination, totalItems);
 
-  const notes = await Note.find(filter)
+  const notes = await Note.find(
+    filter,
+    hasSearchQuery ? { score: { $meta: "textScore" } } : {}
+  )
     .populate("uploadedBy", "name email")
     .populate("reviewedBy", "name email")
-    .sort(hasSearchQuery ? { featured: -1, downloads: -1, createdAt: -1 } : { featured: -1, createdAt: -1 })
+    .sort(
+      hasSearchQuery
+        ? { score: { $meta: "textScore" }, featured: -1, createdAt: -1 }
+        : { featured: -1, createdAt: -1 }
+    )
     .skip(pagination.skip)
     .limit(pagination.limit);
 
@@ -211,63 +178,6 @@ export const getNotes = asyncHandler(async (req, res) => {
     notes: notes.map((note) => serializeNote(req, note)),
     pagination: serializePagination(pagination)
   });
-});
-
-export const getNoteCourses = asyncHandler(async (_req, res) => {
-  const courses = await Note.distinct("courseName", {
-    status: "approved",
-    courseName: { $nin: ["", null] }
-  });
-
-  res.json({ courses: courses.sort((left, right) => left.localeCompare(right)) });
-});
-
-export const getNoteBranches = asyncHandler(async (req, res) => {
-  const branches = await Note.distinct("branchName", {
-    ...buildDistinctApprovedNoteFilter({ courseName: req.query.courseName }),
-    branchName: { $nin: ["", null] }
-  });
-
-  res.json({ branches: branches.sort((left, right) => left.localeCompare(right)) });
-});
-
-export const getNoteSpecializations = asyncHandler(async (req, res) => {
-  const specializations = await Note.distinct("specializationName", {
-    ...buildDistinctApprovedNoteFilter({
-      courseName: req.query.courseName,
-      branchName: req.query.branchName
-    }),
-    specializationName: { $nin: ["", null] }
-  });
-
-  res.json({ specializations: specializations.sort((left, right) => left.localeCompare(right)) });
-});
-
-export const getNoteSubjects = asyncHandler(async (req, res) => {
-  const subjects = await Note.distinct(
-    "subject",
-    buildDistinctApprovedNoteFilter({
-      courseName: req.query.courseName,
-      branchName: req.query.branchName,
-      specializationName: req.query.specializationName
-    })
-  );
-
-  res.json({ subjects: subjects.sort((left, right) => left.localeCompare(right)) });
-});
-
-export const getNoteUnits = asyncHandler(async (req, res) => {
-  const units = await Note.distinct("unitName", {
-    ...buildDistinctApprovedNoteFilter({
-      courseName: req.query.courseName,
-      branchName: req.query.branchName,
-      specializationName: req.query.specializationName,
-      subject: req.query.subject
-    }),
-    unitName: { $nin: ["", null] }
-  });
-
-  res.json({ units: units.sort((left, right) => left.localeCompare(right)) });
 });
 
 export const getTrendingNotes = asyncHandler(async (req, res) => {
@@ -319,17 +229,7 @@ export const getNoteById = asyncHandler(async (req, res) => {
 });
 
 export const createNote = asyncHandler(async (req, res) => {
-  const {
-    title,
-    courseName,
-    branchName,
-    specializationName,
-    subject,
-    unitName,
-    topicName,
-    description,
-    featured = "false"
-  } = req.body;
+  const { title, subject, description, featured = "false" } = req.body;
 
   if (!req.file) {
     throwBadRequest(res, "Please upload a file for the note.");
@@ -341,45 +241,12 @@ export const createNote = asyncHandler(async (req, res) => {
     title,
     NOTE_LIMITS.titleMaxLength
   );
-  const normalizedCourseName = validateRequiredTextField(
-    res,
-    "Course",
-    courseName,
-    NOTE_LIMITS.courseMaxLength
-  );
-  const normalizedBranchName = validateRequiredTextField(
-    res,
-    "Branch",
-    branchName,
-    NOTE_LIMITS.branchMaxLength
-  );
-  const normalizedSpecializationName =
-    validateOptionalLooseTextField(
-      res,
-      "Specialization",
-      specializationName,
-      NOTE_LIMITS.specializationMaxLength
-    ) ?? "";
   const normalizedSubject = validateRequiredTextField(
     res,
     "Subject",
     subject,
     NOTE_LIMITS.subjectMaxLength
   );
-  const normalizedUnitName =
-    validateOptionalLooseTextField(
-      res,
-      "Unit",
-      unitName,
-      NOTE_LIMITS.unitMaxLength
-    ) ?? "";
-  const normalizedTopicName =
-    validateOptionalLooseTextField(
-      res,
-      "Topic",
-      topicName,
-      NOTE_LIMITS.topicMaxLength
-    ) ?? "";
   const normalizedDescription = validateOptionalLooseTextField(
     res,
     "Description",
@@ -400,12 +267,7 @@ export const createNote = asyncHandler(async (req, res) => {
   try {
     note = await Note.create({
       title: normalizedTitle,
-      courseName: normalizedCourseName,
-      branchName: normalizedBranchName,
-      specializationName: normalizedSpecializationName,
       subject: normalizedSubject,
-      unitName: normalizedUnitName,
-      topicName: normalizedTopicName,
       description: normalizedDescription,
       status: "approved",
       reviewedBy: null,
@@ -440,37 +302,12 @@ export const updateNote = asyncHandler(async (req, res) => {
     throw new Error("You can only update your own notes.");
   }
 
-  const {
-    title,
-    courseName,
-    branchName,
-    specializationName,
-    subject,
-    unitName,
-    topicName,
-    description,
-    featured
-  } = req.body;
+  const { title, subject, description, featured } = req.body;
 
   note.title =
     validateOptionalTextField(res, "Title", title, NOTE_LIMITS.titleMaxLength) ?? note.title;
-  note.courseName =
-    validateOptionalTextField(res, "Course", courseName, NOTE_LIMITS.courseMaxLength) ?? note.courseName;
-  note.branchName =
-    validateOptionalTextField(res, "Branch", branchName, NOTE_LIMITS.branchMaxLength) ?? note.branchName;
-  note.specializationName =
-    validateOptionalLooseTextField(
-      res,
-      "Specialization",
-      specializationName,
-      NOTE_LIMITS.specializationMaxLength
-    ) ?? note.specializationName;
   note.subject =
     validateOptionalTextField(res, "Subject", subject, NOTE_LIMITS.subjectMaxLength) ?? note.subject;
-  note.unitName =
-    validateOptionalLooseTextField(res, "Unit", unitName, NOTE_LIMITS.unitMaxLength) ?? note.unitName;
-  note.topicName =
-    validateOptionalLooseTextField(res, "Topic", topicName, NOTE_LIMITS.topicMaxLength) ?? note.topicName;
   note.description =
     validateOptionalLooseTextField(
       res,
