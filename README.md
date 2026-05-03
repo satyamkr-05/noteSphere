@@ -214,4 +214,8 @@ npm start
 
 ## License
 
-This project is for learning and personal project use unless you choose to add a different license.
+Copyright (c) 2026 Satyam
+
+Permission is hereby granted to use, copy, modify, and distribute this software with proper credit.
+
+This software is provided "as is", without any warranty.
