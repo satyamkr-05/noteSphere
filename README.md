@@ -11,6 +11,7 @@ NoteSphere is a full-stack note sharing web application where users can sign up,
 - MongoDB
 - JWT authentication
 - Multer file uploads
+- Cloudflare R2-ready object storage
 
 ## Features
 
@@ -56,11 +57,7 @@ Create a `.env` file in the project root using `.env.example` as a template.
 - `ADMIN_EMAIL`
 - `ADMIN_PASSWORD`
 - `MAIL_FROM`
-- `RESEND_API_KEY`
-- `SMTP_HOST`
-- `SMTP_PORT`
-- `SMTP_USER`
-- `SMTP_PASS`
+- one configured mail provider (`RESEND_API_KEY` or SMTP settings)
 
 ### Common Local Example
 
@@ -74,7 +71,14 @@ ADMIN_PASSWORD=replace_with_a_strong_admin_password
 ADMIN_NAME=NoteSphere Admin
 CLIENT_URL=http://127.0.0.1:5173,http://localhost:5173
 VITE_API_URL=http://127.0.0.1:5000/api
+API_PUBLIC_URL=http://127.0.0.1:5000/api
+FILE_STORAGE_PROVIDER=local
 UPLOAD_DIR=C:\notesphere\uploads
+R2_ACCOUNT_ID=
+R2_ACCESS_KEY_ID=
+R2_SECRET_ACCESS_KEY=
+R2_BUCKET=
+R2_REGION=auto
 MAIL_FROM=NoteSphere <no-reply@example.com>
 RESEND_API_KEY=re_xxxxxxxxx
 SMTP_HOST=smtp.example.com
@@ -178,9 +182,10 @@ npm start
 
 - Never commit `.env`
 - Keep `JWT_SECRET`, database credentials, and admin password private
-- Prefer an email API like Resend in production on Railway trial/hobby plans, because outbound SMTP can be restricted
-- Set `UPLOAD_DIR` to a persistent directory in production
-- On Vercel, default upload storage can be ephemeral unless `UPLOAD_DIR` is configured externally
+- Prefer an email API like Resend in production, because outbound SMTP can be restricted on some free hosts
+- Use `FILE_STORAGE_PROVIDER=r2` in production and keep MongoDB for metadata only
+- `UPLOAD_DIR` is only needed for local storage mode
+- Serverless or free web hosts should not use local disk for production uploads
 - Use a production `CLIENT_URL` and `VITE_API_URL`
 
 ## Safe GitHub Upload Guide

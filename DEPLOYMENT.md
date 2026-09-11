@@ -1,58 +1,70 @@
 # Production Deployment
 
-This project works best in production as a single Node service with:
+This project now deploys best as a split stack:
 
-- frontend built by Vite
-- backend served by Express
-- MongoDB Atlas for the database
-- a persistent disk/volume for uploaded files
+- `Cloudflare Pages` for the frontend
+- `Koyeb` for the backend API
+- `MongoDB Atlas` for the database
+- `Cloudflare R2` for uploads and avatars
 
-## Recommended Platform
+## 1. Target Domains
 
-For the current codebase, Railway is the simplest "full working" option because:
+Recommended setup:
 
-- custom domains are supported
-- SSL is managed for you
-- you can mount a persistent volume for note uploads
-- the app can run as one service after `npm run build`
+- `https://www.yourdomain.com` → frontend
+- `https://api.yourdomain.com` → backend
 
-Vercel is fast for the frontend, but this app stores uploads on disk. On Vercel, local storage is temporary by default, so uploaded files are not a good fit there without moving storage to S3, Cloudinary, Supabase Storage, or a similar service.
+## 2. MongoDB Atlas
 
-## 1. Prepare Production Services
+Create an Atlas cluster and copy the connection string.
 
-### MongoDB Atlas
+Recommended:
 
-Create a MongoDB Atlas database and copy the connection string.
+- create a dedicated database user
+- allow access from Koyeb
+- keep uploaded files out of MongoDB and store only metadata there
 
-### Railway
+## 3. Cloudflare R2
 
-Create a new project and deploy this repository.
-
-Add a persistent volume and mount it to:
+Create one bucket, for example:
 
 ```text
-/data/notesphere-uploads
+notesphere-production
 ```
 
-## 2. Railway Build and Start Commands
+Create R2 API credentials with access to that bucket and collect:
 
-Railway reads the included `railway.json`, so the deploy settings are already defined in code.
+```env
+R2_ACCOUNT_ID=
+R2_ACCESS_KEY_ID=
+R2_SECRET_ACCESS_KEY=
+R2_BUCKET=notesphere-production
+R2_REGION=auto
+```
 
-Current config:
+## 4. Backend on Koyeb
+
+Deploy the repository as a Node web service.
+
+Build command:
 
 ```text
-Builder: Railpack
-Build command: npm run build
-Start command: npm start
-Healthcheck: /api/health
-Required volume mount: /data/notesphere-uploads
+npm install && npm run build
 ```
 
-The frontend production build is created in `dist/`, and the backend now serves that build automatically.
+Start command:
 
-## 3. Required Environment Variables
+```text
+npm start
+```
 
-Set these in Railway:
+Health check:
+
+```text
+/api/health
+```
+
+Set these environment variables in Koyeb:
 
 ```env
 NODE_ENV=production
@@ -61,50 +73,63 @@ JWT_SECRET=use_a_long_random_secret
 ADMIN_EMAIL=admin@yourdomain.com
 ADMIN_PASSWORD=use_a_strong_password
 ADMIN_NAME=NoteSphere Admin
-CLIENT_URL=https://yourdomain.com,https://www.yourdomain.com
-UPLOAD_DIR=/data/notesphere-uploads
+CLIENT_URL=https://www.yourdomain.com,https://yourdomain.com
+API_PUBLIC_URL=https://api.yourdomain.com/api
+FILE_STORAGE_PROVIDER=r2
+R2_ACCOUNT_ID=your_cloudflare_account_id
+R2_ACCESS_KEY_ID=your_r2_access_key_id
+R2_SECRET_ACCESS_KEY=your_r2_secret_access_key
+R2_BUCKET=notesphere-production
+R2_REGION=auto
+MAIL_FROM=NoteSphere <no-reply@yourdomain.com>
+RESEND_API_KEY=re_xxxxxxxxx
 ```
 
-`VITE_API_URL` is not required for this setup. In production, the frontend will call `/api` on the same domain.
+If you prefer SMTP, replace the mail settings with SMTP variables.
 
-## 4. Connect GoDaddy Domain
+## 5. Frontend on Cloudflare Pages
 
-In Railway, generate a public domain for the service first.
+Deploy the same repository or a frontend-only copy to Cloudflare Pages.
 
-Then add your custom domain in Railway, for example:
+Build command:
 
 ```text
-yourdomain.com
-www.yourdomain.com
+npm run build
 ```
 
-Railway will show the DNS records you need to add in GoDaddy.
+Output directory:
 
-Common setup:
+```text
+dist
+```
 
-- `www` -> CNAME -> Railway target
-- root/apex domain -> ALIAS/ANAME or A record values shown by Railway
+Set this environment variable:
 
-After DNS propagation, Railway provisions SSL automatically.
+```env
+VITE_API_URL=https://api.yourdomain.com/api
+```
 
-## 5. First Production Checks
+## 6. GoDaddy DNS
 
-After deploy, verify:
+Typical DNS setup:
 
-- `https://yourdomain.com`
-- `https://yourdomain.com/api/health`
+- `www` → CNAME → Cloudflare Pages target
+- `api` → CNAME → Koyeb target
+- root/apex domain → forward to `https://www.yourdomain.com` or point through your preferred Cloudflare setup
+
+## 7. First Production Checks
+
+After both deploys are live, verify:
+
+- `https://www.yourdomain.com`
+- `https://api.yourdomain.com/api/health`
 - signup/login works
 - admin login works
+- avatar upload works
 - note upload works
-- uploaded file preview/download works after a redeploy
+- note preview/download works
+- question paper preview/download works
 
-That last check confirms the persistent volume is working.
+## 8. Migration Note
 
-## 6. Best Upgrade Later
-
-If you want better long-term scale:
-
-- keep Railway or move frontend to Vercel
-- move uploads from disk to object storage like S3 or Cloudinary
-
-Once uploads move off local disk, Vercel becomes a stronger option for the frontend.
+Existing database records that point to old local-disk files will not automatically reappear unless those old files are copied into R2 with matching metadata. Fresh uploads will go to R2 automatically once `FILE_STORAGE_PROVIDER=r2` is enabled.

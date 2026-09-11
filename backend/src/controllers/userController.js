@@ -5,7 +5,8 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { serializeUser } from "../utils/serializeUser.js";
 import { serializeNote } from "../utils/serializeNote.js";
 import { buildPagination, parsePagination, serializePagination } from "../utils/pagination.js";
-import { removeAvatarFile } from "../utils/userFiles.js";
+import { removeAvatarFile, storeAvatarFile } from "../utils/userFiles.js";
+import { normalizeStorageKey, streamStorageObjectToResponse } from "../utils/storageService.js";
 
 export const getMyProfile = asyncHandler(async (req, res) => {
   const requestedPagination = parsePagination(req.query, {
@@ -93,13 +94,22 @@ export const updateMyProfile = asyncHandler(async (req, res) => {
   }
 
   if (shouldRemoveAvatar && req.user.avatarPath) {
-    removeAvatarFile(req.user.avatarPath);
+    await removeAvatarFile(req.user.avatarPath);
     req.user.avatarPath = "";
   }
 
   if (req.file) {
-    removeAvatarFile(req.user.avatarPath);
-    req.user.avatarPath = `/media/avatars/${req.file.filename}`;
+    const nextAvatarPath = await storeAvatarFile(req.file);
+    const previousAvatarPath = req.user.avatarPath;
+    req.user.avatarPath = nextAvatarPath;
+    await req.user.save();
+    await removeAvatarFile(previousAvatarPath);
+    const refreshedUser = await User.findById(req.user._id);
+
+    res.json({
+      user: serializeUser(refreshedUser)
+    });
+    return;
   }
 
   await req.user.save();
@@ -108,4 +118,15 @@ export const updateMyProfile = asyncHandler(async (req, res) => {
   res.json({
     user: serializeUser(refreshedUser)
   });
+});
+
+export const streamAvatar = asyncHandler(async (req, res) => {
+  const avatarKey = normalizeStorageKey(req.params[0] || "");
+
+  if (!avatarKey || !avatarKey.startsWith("avatars/")) {
+    res.status(404);
+    throw new Error("Profile picture not found.");
+  }
+
+  await streamStorageObjectToResponse(res, avatarKey, avatarKey.split("/").pop() || "avatar", "inline");
 });

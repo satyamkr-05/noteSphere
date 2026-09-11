@@ -1,31 +1,33 @@
-import fs from "fs";
-import path from "path";
-import { uploadDir } from "../config/runtime.js";
+import {
+  buildStoredFileAbsolutePath,
+  deleteStorageObject,
+  hasStorageObject,
+  saveUploadedFile,
+  streamStorageObjectToResponse
+} from "./storageService.js";
 
-export function buildStoredFileAbsolutePath(filePath) {
-  return path.join(uploadDir, path.basename(filePath));
+export { buildStoredFileAbsolutePath };
+
+export async function storeNoteFile(file) {
+  return saveUploadedFile(file, "note");
 }
 
-export function removeStoredFile(filePath) {
-  if (!filePath) {
-    return;
-  }
+export async function storeQuestionPaperFile(file) {
+  return saveUploadedFile(file, "questionPaper");
+}
 
-  const absolutePath = buildStoredFileAbsolutePath(filePath);
-
+export async function removeStoredFile(filePath) {
   try {
-    if (fs.existsSync(absolutePath)) {
-      fs.unlinkSync(absolutePath);
-    }
+    await deleteStorageObject(filePath);
   } catch (error) {
-    console.warn(`Unable to remove stored file: ${absolutePath}`, error);
+    console.warn(`Unable to remove stored file: ${filePath}`, error);
   }
 }
 
-export function hasStoredFile(filePath) {
-  if (!filePath) {
-    return false;
-  }
+export async function hasStoredFile(filePath) {
+  return hasStorageObject(filePath);
+}
 
-  return fs.existsSync(buildStoredFileAbsolutePath(filePath));
+export async function sendStoredFileResponse(res, filePath, fileName, disposition = "inline") {
+  await streamStorageObjectToResponse(res, filePath, fileName, disposition);
 }

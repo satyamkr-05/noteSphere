@@ -8,6 +8,7 @@ export const ADMIN_ROLES = {
 
 export const isVercel = process.env.VERCEL === "1";
 const configuredUploadDir = process.env.UPLOAD_DIR?.trim();
+const configuredStorageProvider = process.env.FILE_STORAGE_PROVIDER?.trim().toLowerCase();
 
 function getConfiguredClientOrigins() {
   return process.env.CLIENT_URL?.split(",")
@@ -21,6 +22,50 @@ export const uploadDir = configuredUploadDir
     ? path.join("/tmp", "notesphere-uploads")
     : path.join(process.cwd(), "backend", "uploads");
 export const avatarDir = path.join(uploadDir, "avatars");
+
+export function getStorageMode() {
+  if (configuredStorageProvider) {
+    if (!["local", "r2"].includes(configuredStorageProvider)) {
+      throw new Error("FILE_STORAGE_PROVIDER must be either local or r2.");
+    }
+
+    return configuredStorageProvider;
+  }
+
+  const hasFullR2Config = Boolean(
+    process.env.R2_BUCKET?.trim() &&
+    process.env.R2_ACCOUNT_ID?.trim() &&
+    process.env.R2_ACCESS_KEY_ID?.trim() &&
+    process.env.R2_SECRET_ACCESS_KEY?.trim()
+  );
+
+  return hasFullR2Config ? "r2" : "local";
+}
+
+export function getR2Config() {
+  if (getStorageMode() !== "r2") {
+    throw new Error("R2 storage is not enabled.");
+  }
+
+  const accountId = process.env.R2_ACCOUNT_ID?.trim();
+  const accessKeyId = process.env.R2_ACCESS_KEY_ID?.trim();
+  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY?.trim();
+  const bucket = process.env.R2_BUCKET?.trim();
+  const region = process.env.R2_REGION?.trim() || "auto";
+
+  if (!accountId || !accessKeyId || !secretAccessKey || !bucket) {
+    throw new Error("R2 storage is incomplete. Set R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, and R2_BUCKET.");
+  }
+
+  return {
+    accountId,
+    accessKeyId,
+    secretAccessKey,
+    bucket,
+    region,
+    endpoint: `https://${accountId}.r2.cloudflarestorage.com`
+  };
+}
 
 export function getAllowedOrigins() {
   const configuredOrigins = getConfiguredClientOrigins();
@@ -54,6 +99,24 @@ export function getPrimaryClientUrl() {
   }
 
   return "http://127.0.0.1:5173";
+}
+
+export function getApiPublicUrl() {
+  const configuredUrl = process.env.API_PUBLIC_URL?.trim();
+
+  if (configuredUrl) {
+    return configuredUrl.replace(/\/+$/, "");
+  }
+
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}/api`;
+  }
+
+  if (process.env.RAILWAY_PUBLIC_DOMAIN) {
+    return `https://${process.env.RAILWAY_PUBLIC_DOMAIN}/api`;
+  }
+
+  return "http://127.0.0.1:5000/api";
 }
 
 export function getAdminEmail() {
@@ -111,8 +174,9 @@ export function isMainAdminUser(userOrEmail) {
 
 export function getStorageConfig() {
   return {
+    provider: getStorageMode(),
     uploadDir,
     hasCustomUploadDir: Boolean(configuredUploadDir),
-    isEphemeral: isVercel && !configuredUploadDir
+    isEphemeral: getStorageMode() === "local" && isVercel && !configuredUploadDir
   };
 }

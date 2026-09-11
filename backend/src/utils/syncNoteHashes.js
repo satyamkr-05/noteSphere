@@ -1,8 +1,13 @@
 import Note from "../models/Note.js";
+import { getStorageMode } from "../config/runtime.js";
 import { buildStoredFileAbsolutePath } from "./noteFiles.js";
 import { hashFileAtPath } from "./fileHash.js";
 
 export async function syncNoteHashes() {
+  if (getStorageMode() !== "local") {
+    return;
+  }
+
   const notes = await Note.find({
     $or: [{ fileHash: { $exists: false } }, { fileHash: "" }, { fileHash: null }]
   });

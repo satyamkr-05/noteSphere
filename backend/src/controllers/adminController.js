@@ -357,7 +357,7 @@ export const deleteAdminNote = asyncHandler(async (req, res) => {
     throw new AppError("Note not found.", 404);
   }
 
-  removeStoredFile(note.filePath);
+  await removeStoredFile(note.filePath);
   await note.deleteOne();
 
   res.json({ message: "Note deleted successfully." });
@@ -396,7 +396,7 @@ export const deleteAdminQuestionPaper = asyncHandler(async (req, res) => {
     throw new AppError("Question paper not found.", 404);
   }
 
-  removeStoredFile(questionPaper.filePath);
+  await removeStoredFile(questionPaper.filePath);
   await questionPaper.deleteOne();
 
   res.json({ message: "Question paper deleted successfully." });
@@ -707,11 +707,11 @@ export const deleteAdminUser = asyncHandler(async (req, res) => {
   const questionPapers = await QuestionPaper.find({ uploadedBy: user._id });
 
   for (const note of notes) {
-    removeStoredFile(note.filePath);
+    await removeStoredFile(note.filePath);
   }
 
   for (const questionPaper of questionPapers) {
-    removeStoredFile(questionPaper.filePath);
+    await removeStoredFile(questionPaper.filePath);
   }
 
   await Note.deleteMany({ uploadedBy: user._id });

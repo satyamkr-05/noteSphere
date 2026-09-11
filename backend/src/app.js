@@ -5,7 +5,6 @@ import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 import { getAllowedOrigins } from "./config/runtime.js";
-import { avatarDir } from "./config/runtime.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import feedbackRoutes from "./routes/feedbackRoutes.js";
@@ -48,7 +47,6 @@ app.use((req, res, next) => {
 });
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
-app.use("/media/avatars", express.static(avatarDir));
 
 app.get("/api/health", (_req, res) => {
   const readiness = getReadinessState();

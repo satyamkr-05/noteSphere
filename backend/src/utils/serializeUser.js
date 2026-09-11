@@ -1,4 +1,5 @@
 import { getResolvedAdminRole, isAdminUser, isMainAdminUser } from "../config/runtime.js";
+import { resolveAvatarUrl } from "./userFiles.js";
 
 export function serializeUser(user) {
   const adminRole = getResolvedAdminRole(user);
@@ -10,7 +11,7 @@ export function serializeUser(user) {
     isAdmin: isAdminUser(user),
     isMainAdmin: isMainAdminUser(user),
     adminRole,
-    avatarUrl: user.avatarPath || "",
+    avatarUrl: resolveAvatarUrl(user.avatarPath),
     createdAt: user.createdAt,
     updatedAt: user.updatedAt
   };

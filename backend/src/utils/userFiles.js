@@ -1,19 +1,17 @@
-import fs from "fs";
-import path from "path";
-import { avatarDir } from "../config/runtime.js";
+import { buildAvatarUrl, deleteStorageObject, normalizeStorageKey, saveUploadedFile } from "./storageService.js";
 
 export function buildAvatarAbsolutePath(avatarPath) {
-  return path.join(avatarDir, path.basename(avatarPath));
+  return normalizeStorageKey(avatarPath);
 }
 
-export function removeAvatarFile(avatarPath) {
-  if (!avatarPath) {
-    return;
-  }
+export async function storeAvatarFile(file) {
+  return saveUploadedFile(file, "avatar");
+}
 
-  const absolutePath = buildAvatarAbsolutePath(avatarPath);
+export async function removeAvatarFile(avatarPath) {
+  await deleteStorageObject(avatarPath);
+}
 
-  if (fs.existsSync(absolutePath)) {
-    fs.unlinkSync(absolutePath);
-  }
+export function resolveAvatarUrl(avatarPath) {
+  return buildAvatarUrl(avatarPath);
 }

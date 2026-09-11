@@ -2,16 +2,17 @@ import Note from "../models/Note.js";
 import DownloadRecord from "../models/DownloadRecord.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import {
-  buildStoredFileAbsolutePath,
   hasStoredFile,
-  removeStoredFile
+  removeStoredFile,
+  sendStoredFileResponse,
+  storeNoteFile
 } from "../utils/noteFiles.js";
 import {
   buildPagination,
   parsePagination,
   serializePagination
 } from "../utils/pagination.js";
-import { hashFileAtPath } from "../utils/fileHash.js";
+import { hashFileBuffer } from "../utils/fileHash.js";
 import { serializeNote } from "../utils/serializeNote.js";
 import { NOTE_LIMITS } from "../../../shared/noteLimits.js";
 
@@ -133,7 +134,7 @@ async function findAccessibleNoteFile(req, res) {
     throw new Error("You do not have access to this note file.");
   }
 
-  if (!hasStoredFile(note.filePath)) {
+  if (!(await hasStoredFile(note.filePath))) {
     res.status(404);
     throw new Error("The note file could not be found.");
   }
@@ -142,11 +143,7 @@ async function findAccessibleNoteFile(req, res) {
 }
 
 function sendNoteFileResponse(res, note, disposition = "inline") {
-  const absolutePath = buildStoredFileAbsolutePath(note.filePath);
-  res.setHeader("Cache-Control", "private, max-age=0, must-revalidate");
-  res.setHeader("Content-Disposition", `${disposition}; filename="${encodeURIComponent(note.fileName)}"`);
-  res.type(note.fileName);
-  res.sendFile(absolutePath);
+  return sendStoredFileResponse(res, note.filePath, note.fileName, disposition);
 }
 
 async function ensureUniqueFileHash(res, fileHash, currentNoteId = "") {
@@ -328,18 +325,15 @@ export const createNote = asyncHandler(async (req, res) => {
     description,
     NOTE_LIMITS.descriptionMaxLength
   ) ?? "";
-  const fileHash = await hashFileAtPath(req.file.path);
+  const fileHash = hashFileBuffer(req.file.buffer);
 
-  try {
-    await ensureUniqueFileHash(res, fileHash);
-  } catch (error) {
-    removeStoredFile(req.file.path);
-    throw error;
-  }
+  await ensureUniqueFileHash(res, fileHash);
 
+  let storedFilePath = "";
   let note;
 
   try {
+    storedFilePath = await storeNoteFile(req.file);
     note = await Note.create({
       title: normalizedTitle,
       courseName: normalizedCourseName,
@@ -354,12 +348,12 @@ export const createNote = asyncHandler(async (req, res) => {
       reviewedAt: null,
       featured: featured === "true",
       fileName: req.file.originalname,
-      filePath: `/uploads/${req.file.filename}`,
+      filePath: storedFilePath,
       fileHash,
       uploadedBy: req.user._id
     });
   } catch (error) {
-    removeStoredFile(req.file.path);
+    await removeStoredFile(storedFilePath);
     throw error;
   }
 
@@ -429,20 +423,25 @@ export const updateNote = asyncHandler(async (req, res) => {
   note.reviewedAt = null;
 
   if (req.file) {
-    const nextFileHash = await hashFileAtPath(req.file.path);
+    const nextFileHash = hashFileBuffer(req.file.buffer);
     const previousFilePath = note.filePath;
 
+    await ensureUniqueFileHash(res, nextFileHash, note._id.toString());
+    const nextStoredFilePath = await storeNoteFile(req.file);
+    note.fileName = req.file.originalname;
+    note.filePath = nextStoredFilePath;
+    note.fileHash = nextFileHash;
+
     try {
-      await ensureUniqueFileHash(res, nextFileHash, note._id.toString());
+      await note.save();
+      await removeStoredFile(previousFilePath);
+      await populateNoteRelations(note);
+      res.json({ note: serializeNote(req, note) });
+      return;
     } catch (error) {
-      removeStoredFile(req.file.path);
+      await removeStoredFile(nextStoredFilePath);
       throw error;
     }
-
-    removeStoredFile(previousFilePath);
-    note.fileName = req.file.originalname;
-    note.filePath = `/uploads/${req.file.filename}`;
-    note.fileHash = nextFileHash;
   }
 
   let updatedNote;
@@ -450,10 +449,6 @@ export const updateNote = asyncHandler(async (req, res) => {
   try {
     updatedNote = await note.save();
   } catch (error) {
-    if (req.file) {
-      removeStoredFile(req.file.path);
-    }
-
     throw error;
   }
 
@@ -477,7 +472,7 @@ export const deleteNote = asyncHandler(async (req, res) => {
     throw new Error("You can only delete your own notes.");
   }
 
-  removeStoredFile(note.filePath);
+  await removeStoredFile(note.filePath);
   await note.deleteOne();
 
   res.json({ message: "Note deleted successfully." });
@@ -497,12 +492,12 @@ export const registerDownload = asyncHandler(async (req, res) => {
     ]);
   }
 
-  sendNoteFileResponse(res, note, "attachment");
+  await sendNoteFileResponse(res, note, "attachment");
 });
 
 export const streamNoteFile = asyncHandler(async (req, res) => {
   const note = await findAccessibleNoteFile(req, res);
-  sendNoteFileResponse(res, note, req.query.disposition === "attachment" ? "attachment" : "inline");
+  await sendNoteFileResponse(res, note, req.query.disposition === "attachment" ? "attachment" : "inline");
 });
 
 export const getPublicNoteStats = asyncHandler(async (_req, res) => {

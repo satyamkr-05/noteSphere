@@ -1,16 +1,17 @@
 import QuestionPaper from "../models/QuestionPaper.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import {
-  buildStoredFileAbsolutePath,
   hasStoredFile,
-  removeStoredFile
+  removeStoredFile,
+  sendStoredFileResponse,
+  storeQuestionPaperFile
 } from "../utils/noteFiles.js";
 import {
   buildPagination,
   parsePagination,
   serializePagination
 } from "../utils/pagination.js";
-import { hashFileAtPath } from "../utils/fileHash.js";
+import { hashFileBuffer } from "../utils/fileHash.js";
 import { serializeQuestionPaper } from "../utils/serializeQuestionPaper.js";
 import {
   QUESTION_BANK_LIMITS,
@@ -219,7 +220,7 @@ async function findAccessibleQuestionPaperFile(req, res) {
     throw new Error("You do not have access to this question paper file.");
   }
 
-  if (!hasStoredFile(paper.filePath)) {
+  if (!(await hasStoredFile(paper.filePath))) {
     res.status(404);
     throw new Error("The question paper file could not be found.");
   }
@@ -228,11 +229,7 @@ async function findAccessibleQuestionPaperFile(req, res) {
 }
 
 function sendQuestionPaperFileResponse(res, paper, disposition = "inline") {
-  const absolutePath = buildStoredFileAbsolutePath(paper.filePath);
-  res.setHeader("Cache-Control", "private, max-age=0, must-revalidate");
-  res.setHeader("Content-Disposition", `${disposition}; filename="${encodeURIComponent(paper.fileName)}"`);
-  res.type(paper.fileName);
-  res.sendFile(absolutePath);
+  return sendStoredFileResponse(res, paper.filePath, paper.fileName, disposition);
 }
 
 async function ensureUniqueFileHash(res, fileHash, currentPaperId = "") {
@@ -423,18 +420,15 @@ export const createQuestionPaper = asyncHandler(async (req, res) => {
     description,
     QUESTION_BANK_LIMITS.descriptionMaxLength
   ) ?? "";
-  const fileHash = await hashFileAtPath(req.file.path);
+  const fileHash = hashFileBuffer(req.file.buffer);
 
-  try {
-    await ensureUniqueFileHash(res, fileHash);
-  } catch (error) {
-    removeStoredFile(req.file.path);
-    throw error;
-  }
+  await ensureUniqueFileHash(res, fileHash);
 
+  let storedFilePath = "";
   let paper;
 
   try {
+    storedFilePath = await storeQuestionPaperFile(req.file);
     paper = await QuestionPaper.create({
       title: validatedTitle,
       universityName: normalizedUniversityName,
@@ -449,12 +443,12 @@ export const createQuestionPaper = asyncHandler(async (req, res) => {
       reviewedAt: null,
       featured: featured === "true",
       fileName: req.file.originalname,
-      filePath: `/uploads/${req.file.filename}`,
+      filePath: storedFilePath,
       fileHash,
       uploadedBy: req.user._id
     });
   } catch (error) {
-    removeStoredFile(req.file.path);
+    await removeStoredFile(storedFilePath);
     throw error;
   }
 
@@ -529,20 +523,25 @@ export const updateQuestionPaper = asyncHandler(async (req, res) => {
   paper.reviewedAt = null;
 
   if (req.file) {
-    const nextFileHash = await hashFileAtPath(req.file.path);
+    const nextFileHash = hashFileBuffer(req.file.buffer);
     const previousFilePath = paper.filePath;
 
+    await ensureUniqueFileHash(res, nextFileHash, paper._id.toString());
+    const nextStoredFilePath = await storeQuestionPaperFile(req.file);
+    paper.fileName = req.file.originalname;
+    paper.filePath = nextStoredFilePath;
+    paper.fileHash = nextFileHash;
+
     try {
-      await ensureUniqueFileHash(res, nextFileHash, paper._id.toString());
+      await paper.save();
+      await removeStoredFile(previousFilePath);
+      await populateQuestionPaperRelations(paper);
+      res.json({ paper: serializeQuestionPaper(req, paper) });
+      return;
     } catch (error) {
-      removeStoredFile(req.file.path);
+      await removeStoredFile(nextStoredFilePath);
       throw error;
     }
-
-    removeStoredFile(previousFilePath);
-    paper.fileName = req.file.originalname;
-    paper.filePath = `/uploads/${req.file.filename}`;
-    paper.fileHash = nextFileHash;
   }
 
   let updatedPaper;
@@ -550,10 +549,6 @@ export const updateQuestionPaper = asyncHandler(async (req, res) => {
   try {
     updatedPaper = await paper.save();
   } catch (error) {
-    if (req.file) {
-      removeStoredFile(req.file.path);
-    }
-
     throw error;
   }
 
@@ -575,7 +570,7 @@ export const deleteQuestionPaper = asyncHandler(async (req, res) => {
     throw new Error("You can only delete your own question papers.");
   }
 
-  removeStoredFile(paper.filePath);
+  await removeStoredFile(paper.filePath);
   await paper.deleteOne();
 
   res.json({ message: "Question paper deleted successfully." });
@@ -589,12 +584,12 @@ export const registerQuestionPaperDownload = asyncHandler(async (req, res) => {
     await paper.save();
   }
 
-  sendQuestionPaperFileResponse(res, paper, "attachment");
+  await sendQuestionPaperFileResponse(res, paper, "attachment");
 });
 
 export const streamQuestionPaperFile = asyncHandler(async (req, res) => {
   const paper = await findAccessibleQuestionPaperFile(req, res);
-  sendQuestionPaperFileResponse(
+  await sendQuestionPaperFileResponse(
     res,
     paper,
     req.query.disposition === "attachment" ? "attachment" : "inline"
