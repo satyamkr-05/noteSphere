@@ -15,9 +15,9 @@ const topSubjects = [
 
 const faqItems = [
   {
-    question: "Who can upload notes on NoteSphere?",
+    question: "What can I find on NoteSphere?",
     answer:
-      "Only admins and sub admins can upload notes and question papers so the study library stays curated."
+      "You can browse curated study notes and question papers organized for faster revision."
   },
   {
     question: "Can I preview notes before downloading them?",
@@ -27,7 +27,7 @@ const faqItems = [
   {
     question: "How is the library kept clean?",
     answer:
-      "Admins manage uploads directly and can remove duplicate, outdated, or incorrect content."
+      "Admins manage the library directly and remove duplicate, outdated, or incorrect content."
   },
   {
     question: "Will my profile show my activity?",
@@ -176,7 +176,7 @@ export default function HomePage({ reloadKey, showToast }) {
           <div className="hero__stats">
             <article className="stat-card glass-card">
               <strong>{String(homeStats.totalApprovedNotes).padStart(2, "0")}</strong>
-              <span>Notes Shared</span>
+              <span>Study Notes</span>
             </article>
             <article className="stat-card glass-card">
               <strong>{String(homeStats.totalSubjects).padStart(2, "0")}</strong>

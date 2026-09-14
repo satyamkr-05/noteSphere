@@ -353,7 +353,7 @@ export default function ExplorePage({ onNotesChanged, showToast }) {
 
         {!isLoading && !loadError && notes.length === 0 ? (
           <p className="empty-state glass-card">
-            No notes match your search yet. Upload one from your dashboard to get started.
+            No notes match your search yet. Try a different subject, title, or course keyword.
           </p>
         ) : null}
 

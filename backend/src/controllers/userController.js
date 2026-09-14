@@ -1,11 +1,9 @@
-import Note from "../models/Note.js";
 import User from "../models/User.js";
 import DownloadRecord from "../models/DownloadRecord.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { serializeUser } from "../utils/serializeUser.js";
 import { serializeNote } from "../utils/serializeNote.js";
 import { buildPagination, parsePagination, serializePagination } from "../utils/pagination.js";
-import { removeAvatarFile, storeAvatarFile } from "../utils/userFiles.js";
 import { normalizeStorageKey, streamStorageObjectToResponse } from "../utils/storageService.js";
 
 export const getMyProfile = asyncHandler(async (req, res) => {
@@ -13,62 +11,33 @@ export const getMyProfile = asyncHandler(async (req, res) => {
     defaultLimit: 6,
     maxLimit: 18
   });
-  const uploadedFilter = { uploadedBy: req.user._id };
-  const totalItems = await Note.countDocuments(uploadedFilter);
+  const downloadFilter = { user: req.user._id };
+  const totalItems = await DownloadRecord.countDocuments(downloadFilter);
   const pagination = buildPagination(requestedPagination, totalItems);
 
-  const [notes, uploadSummary, uniqueDownloadedNoteIds, totalDownloadActions] = await Promise.all([
-    Note.find(uploadedFilter)
-      .populate("uploadedBy", "name email avatarPath createdAt updatedAt")
-      .populate("reviewedBy", "name email")
+  const [downloadRecords, uniqueDownloadedNoteIds, totalDownloadActions] = await Promise.all([
+    DownloadRecord.find(downloadFilter)
       .sort({ createdAt: -1 })
       .skip(pagination.skip)
-      .limit(pagination.limit),
-    Note.aggregate([
-      { $match: uploadedFilter },
-      {
-        $group: {
-          _id: null,
-          totalUploads: { $sum: 1 },
-          approvedUploads: {
-            $sum: {
-              $cond: [{ $eq: ["$status", "approved"] }, 1, 0]
-            }
-          },
-          pendingUploads: {
-            $sum: {
-              $cond: [{ $eq: ["$status", "pending"] }, 1, 0]
-            }
-          },
-          featuredUploads: {
-            $sum: {
-              $cond: [{ $eq: ["$featured", true] }, 1, 0]
-            }
-          },
-          totalUploadDownloads: { $sum: "$downloads" }
-        }
-      }
-    ]),
+      .limit(pagination.limit)
+      .populate({
+        path: "note",
+        populate: [
+          { path: "uploadedBy", select: "name email avatarPath createdAt updatedAt" },
+          { path: "reviewedBy", select: "name email" }
+        ]
+      }),
     DownloadRecord.distinct("note", { user: req.user._id }),
     DownloadRecord.countDocuments({ user: req.user._id })
   ]);
 
-  const stats = uploadSummary[0] || {
-    totalUploads: 0,
-    approvedUploads: 0,
-    pendingUploads: 0,
-    featuredUploads: 0,
-    totalUploadDownloads: 0
-  };
+  const notes = downloadRecords
+    .map((record) => record.note)
+    .filter((note) => note && note.status === "approved");
 
   res.json({
     user: serializeUser(req.user),
     stats: {
-      totalUploads: stats.totalUploads,
-      approvedUploads: stats.approvedUploads,
-      pendingUploads: stats.pendingUploads,
-      featuredUploads: stats.featuredUploads,
-      totalUploadDownloads: stats.totalUploadDownloads,
       notesDownloaded: uniqueDownloadedNoteIds.length,
       downloadActions: totalDownloadActions
     },
@@ -79,10 +48,6 @@ export const getMyProfile = asyncHandler(async (req, res) => {
 
 export const updateMyProfile = asyncHandler(async (req, res) => {
   const nextName = typeof req.body.name === "string" ? req.body.name.trim() : "";
-  const shouldRemoveAvatar =
-    req.body.removeAvatar === true ||
-    req.body.removeAvatar === "true" ||
-    req.body.removeAvatar === "1";
 
   if (nextName) {
     if (nextName.length > 60) {
@@ -91,25 +56,6 @@ export const updateMyProfile = asyncHandler(async (req, res) => {
     }
 
     req.user.name = nextName;
-  }
-
-  if (shouldRemoveAvatar && req.user.avatarPath) {
-    await removeAvatarFile(req.user.avatarPath);
-    req.user.avatarPath = "";
-  }
-
-  if (req.file) {
-    const nextAvatarPath = await storeAvatarFile(req.file);
-    const previousAvatarPath = req.user.avatarPath;
-    req.user.avatarPath = nextAvatarPath;
-    await req.user.save();
-    await removeAvatarFile(previousAvatarPath);
-    const refreshedUser = await User.findById(req.user._id);
-
-    res.json({
-      user: serializeUser(refreshedUser)
-    });
-    return;
   }
 
   await req.user.save();

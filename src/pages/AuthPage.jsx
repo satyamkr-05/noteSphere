@@ -59,9 +59,9 @@ export default function AuthPage({ showToast }) {
         <div className="auth-card glass-card reveal is-visible">
           <div className="auth-copy">
             <span className="eyebrow">Login / Signup</span>
-            <h2>Welcome back to your note sharing workspace</h2>
+            <h2>Welcome back to your study workspace</h2>
             <p>
-              Sign in to manage your notes, upload new resources, and continue building your study library.
+              Sign in to browse notes, access question papers, and keep your study activity in one place.
             </p>
           </div>
 

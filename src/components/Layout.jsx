@@ -169,7 +169,7 @@ export default function Layout({ children, isDark, onLogout, onToggleTheme, show
                   <span className="logo__text-sphere">Sphere</span>
                 </span>
               </NavLink>
-              <p>A modern note sharing experience for focused learners.</p>
+              <p>A modern study library experience for focused learners.</p>
             </div>
 
             <div className="footer-links">

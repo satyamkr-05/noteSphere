@@ -15,11 +15,6 @@ const initialPagination = {
 };
 
 const emptyStats = {
-  totalUploads: 0,
-  approvedUploads: 0,
-  pendingUploads: 0,
-  featuredUploads: 0,
-  totalUploadDownloads: 0,
   notesDownloaded: 0,
   downloadActions: 0
 };
@@ -175,18 +170,10 @@ export default function ProfilePage({ showToast }) {
           <div className="profile-content">
             <div className="section-heading reveal">
               <span className="eyebrow">Your Stats</span>
-              <h2>Track your uploads and activity</h2>
+              <h2>Track your reading activity</h2>
             </div>
 
             <div className="profile-stats-grid">
-              <article className="stat-card glass-card reveal is-visible">
-                <strong>{stats.totalUploads}</strong>
-                <span>Total Uploads</span>
-              </article>
-              <article className="stat-card glass-card reveal is-visible">
-                <strong>{stats.totalUploadDownloads}</strong>
-                <span>Downloads On Your Notes</span>
-              </article>
               <article className="stat-card glass-card reveal is-visible">
                 <strong>{stats.notesDownloaded}</strong>
                 <span>Notes Downloaded</span>
@@ -195,21 +182,13 @@ export default function ProfilePage({ showToast }) {
                 <strong>{stats.downloadActions}</strong>
                 <span>Download Actions</span>
               </article>
-              <article className="stat-card glass-card reveal is-visible">
-                <strong>{stats.approvedUploads}</strong>
-                <span>Approved Notes</span>
-              </article>
-              <article className="stat-card glass-card reveal is-visible">
-                <strong>{stats.featuredUploads}</strong>
-                <span>Featured Notes</span>
-              </article>
             </div>
 
             <section className="section section--compact">
               <div className="section-heading reveal">
-                <span className="eyebrow">Uploaded Notes</span>
-                <h2>Your uploaded library</h2>
-                <p>All your uploaded notes are listed here with status and download numbers.</p>
+                <span className="eyebrow">Downloaded Notes</span>
+                <h2>Your recent note activity</h2>
+                <p>Notes you downloaded recently appear here for quick access.</p>
               </div>
 
               <div className="notes-grid notes-grid--compact">
@@ -223,9 +202,7 @@ export default function ProfilePage({ showToast }) {
                       <span><i className="fa-solid fa-download"></i> {note.downloads}</span>
                     </div>
                     <div className="note-card__meta">
-                      <span className={`status-badge status-badge--${note.status || "pending"}`}>
-                        {note.status || "pending"}
-                      </span>
+                      <span className="status-badge status-badge--approved">Downloaded</span>
                     </div>
                     <div className="note-card__actions">
                       <div className="note-card__buttons">
@@ -239,7 +216,7 @@ export default function ProfilePage({ showToast }) {
               </div>
 
               {notes.length === 0 ? (
-                <p className="empty-state glass-card">You have not uploaded any notes yet.</p>
+                <p className="empty-state glass-card">Downloaded notes will appear here after you save study material.</p>
               ) : null}
 
               {notes.length > 0 ? (
