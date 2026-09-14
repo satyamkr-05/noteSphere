@@ -12,7 +12,7 @@ import {
   streamNoteFile,
   updateNote
 } from "../controllers/noteController.js";
-import { protect } from "../middleware/authMiddleware.js";
+import { adminOnly, protect } from "../middleware/authMiddleware.js";
 import { upload } from "../config/multer.js";
 
 const router = express.Router();
@@ -25,8 +25,8 @@ router.get("/mine", protect, getMyNotes);
 router.get("/:id", getNoteById);
 router.get("/:id/file", protect, streamNoteFile);
 router.get("/:id/download", protect, registerDownload);
-router.post("/", protect, upload.single("file"), createNote);
-router.put("/:id", protect, upload.single("file"), updateNote);
-router.delete("/:id", protect, deleteNote);
+router.post("/", protect, adminOnly, upload.single("file"), createNote);
+router.put("/:id", protect, adminOnly, upload.single("file"), updateNote);
+router.delete("/:id", protect, adminOnly, deleteNote);
 
 export default router;

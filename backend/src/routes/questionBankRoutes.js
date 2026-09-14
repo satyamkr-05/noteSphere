@@ -14,7 +14,7 @@ import {
   streamQuestionPaperFile,
   updateQuestionPaper
 } from "../controllers/questionBankController.js";
-import { protect } from "../middleware/authMiddleware.js";
+import { adminOnly, protect } from "../middleware/authMiddleware.js";
 import { upload } from "../config/multer.js";
 
 const router = express.Router();
@@ -29,8 +29,8 @@ router.get("/papers/mine", protect, getMyQuestionPapers);
 router.get("/papers/:id", getQuestionPaperById);
 router.get("/papers/:id/file", protect, streamQuestionPaperFile);
 router.get("/papers/:id/download", protect, registerQuestionPaperDownload);
-router.post("/papers", protect, upload.single("file"), createQuestionPaper);
-router.put("/papers/:id", protect, upload.single("file"), updateQuestionPaper);
-router.delete("/papers/:id", protect, deleteQuestionPaper);
+router.post("/papers", protect, adminOnly, upload.single("file"), createQuestionPaper);
+router.put("/papers/:id", protect, adminOnly, upload.single("file"), updateQuestionPaper);
+router.delete("/papers/:id", protect, adminOnly, deleteQuestionPaper);
 
 export default router;

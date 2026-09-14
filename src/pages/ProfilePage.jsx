@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import NotePreviewModal from "../components/NotePreviewModal";
 import PaginationControls from "../components/PaginationControls";
 import { useAuth } from "../context/AuthContext";
@@ -33,13 +33,8 @@ export default function ProfilePage({ showToast }) {
   const [pagination, setPagination] = useState(initialPagination);
   const [currentPage, setCurrentPage] = useState(1);
   const [previewNote, setPreviewNote] = useState(null);
-  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
-  const [isRemovingAvatar, setIsRemovingAvatar] = useState(false);
-  const [isAvatarMenuOpen, setIsAvatarMenuOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
-  const fileInputRef = useRef(null);
-  const avatarMenuRef = useRef(null);
 
   useReveal([notes.length, currentPage]);
 
@@ -50,17 +45,6 @@ export default function ProfilePage({ showToast }) {
   useEffect(() => {
     setNameDraft(profileUser?.name || "");
   }, [profileUser?.name]);
-
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (!avatarMenuRef.current?.contains(event.target)) {
-        setIsAvatarMenuOpen(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   async function loadProfile(pageToLoad = currentPage) {
     try {
@@ -83,64 +67,6 @@ export default function ProfilePage({ showToast }) {
       setNotes([]);
       setPagination(initialPagination);
       showToast(getErrorMessage(error, "Unable to load your profile."), "error");
-    }
-  }
-
-  async function handleAvatarChange(event) {
-    const selectedFile = event.target.files?.[0];
-
-    if (!selectedFile) {
-      return;
-    }
-
-    if (!selectedFile.type.startsWith("image/")) {
-      showToast("Please choose a valid image file.", "error");
-      event.target.value = "";
-      return;
-    }
-
-    if (selectedFile.size > 2 * 1024 * 1024) {
-      showToast("Profile picture must be 2 MB or smaller.", "error");
-      event.target.value = "";
-      return;
-    }
-
-    const payload = new FormData();
-    payload.append("avatar", selectedFile);
-
-    try {
-      setIsUploadingAvatar(true);
-      setIsAvatarMenuOpen(false);
-      const response = await api.put("/users/me", payload);
-      setProfileUser(response.data.user);
-      updateCurrentUser(response.data.user);
-      showToast("Profile picture updated successfully.", "success");
-    } catch (error) {
-      showToast(getErrorMessage(error, "Unable to update your profile picture."), "error");
-    } finally {
-      setIsUploadingAvatar(false);
-      event.target.value = "";
-    }
-  }
-
-  async function handleRemoveAvatar() {
-    if (!profileUser?.avatarUrl) {
-      return;
-    }
-
-    try {
-      setIsRemovingAvatar(true);
-      setIsAvatarMenuOpen(false);
-      const payload = new FormData();
-      payload.append("removeAvatar", "true");
-      const response = await api.put("/users/me", payload);
-      setProfileUser(response.data.user);
-      updateCurrentUser(response.data.user);
-      showToast("Profile picture removed successfully.", "success");
-    } catch (error) {
-      showToast(getErrorMessage(error, "Unable to remove your profile picture."), "error");
-    } finally {
-      setIsRemovingAvatar(false);
     }
   }
 
@@ -175,48 +101,13 @@ export default function ProfilePage({ showToast }) {
       <div className="container">
         <div className="profile-grid">
           <aside className="profile-card glass-card reveal is-visible">
-            <div className="profile-card__avatar-wrap" ref={avatarMenuRef}>
+            <div className="profile-card__avatar-wrap">
               <div className="profile-card__avatar">
                 {profileUser?.avatarUrl ? (
                   <img src={profileUser.avatarUrl} alt={profileUser.name} className="profile-card__avatar-image" />
                 ) : (
                   <span className="profile-card__avatar-fallback">{getInitials(profileUser?.name)}</span>
                 )}
-              </div>
-
-              <button
-                type="button"
-                className="profile-card__avatar-trigger"
-                onClick={() => setIsAvatarMenuOpen((current) => !current)}
-                disabled={isUploadingAvatar || isRemovingAvatar}
-                aria-label="Profile picture options"
-                aria-expanded={isAvatarMenuOpen}
-                title="Profile picture options"
-              >
-                <i className={`fa-solid ${isUploadingAvatar ? "fa-spinner fa-spin" : "fa-pen"}`}></i>
-              </button>
-
-              <div className={`profile-card__avatar-menu${isAvatarMenuOpen ? " is-open" : ""}`}>
-                <button
-                  type="button"
-                  className="profile-card__avatar-menu-item"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploadingAvatar || isRemovingAvatar || isSavingProfile}
-                >
-                  <i className="fa-regular fa-image"></i>
-                  <span>{isUploadingAvatar ? "Uploading..." : "Upload Picture"}</span>
-                </button>
-                {profileUser?.avatarUrl ? (
-                  <button
-                    type="button"
-                    className="profile-card__avatar-menu-item profile-card__avatar-menu-item--danger"
-                    onClick={handleRemoveAvatar}
-                    disabled={isUploadingAvatar || isRemovingAvatar || isSavingProfile}
-                  >
-                    <i className={`fa-solid ${isRemovingAvatar ? "fa-spinner fa-spin" : "fa-trash-can"}`}></i>
-                    <span>{isRemovingAvatar ? "Removing..." : "Remove Picture"}</span>
-                  </button>
-                ) : null}
               </div>
             </div>
 
@@ -278,14 +169,6 @@ export default function ProfilePage({ showToast }) {
                   Edit Profile
                 </button>
               )}
-
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                hidden
-                onChange={handleAvatarChange}
-              />
             </div>
           </aside>
 

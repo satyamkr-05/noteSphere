@@ -122,7 +122,7 @@ export default function Layout({ children, isDark, onLogout, onToggleTheme, show
             <NavLink to="/" onClick={closeNav}>Home</NavLink>
             <NavLink to="/explore" onClick={closeNav}>Notes</NavLink>
             <NavLink to="/question-bank" onClick={closeNav}>Question Bank</NavLink>
-            <NavLink to="/upload" onClick={closeNav}>Upload</NavLink>
+            {user?.isAdmin ? <NavLink to="/upload" onClick={closeNav}>Upload</NavLink> : null}
             {user?.isAdmin ? <NavLink to="/admin" onClick={closeNav}>Admin</NavLink> : null}
             <NavLink to={isAuthenticated ? "/dashboard" : "/auth"} onClick={closeNav}>
               {isAuthenticated ? "Dashboard" : "Login"}
@@ -176,7 +176,7 @@ export default function Layout({ children, isDark, onLogout, onToggleTheme, show
               <NavLink to="/">Home</NavLink>
               <NavLink to="/explore">Notes</NavLink>
               <NavLink to="/question-bank">Question Bank</NavLink>
-              <NavLink to="/upload">Upload</NavLink>
+              {user?.isAdmin ? <NavLink to="/upload">Upload</NavLink> : null}
               {user?.isAdmin ? <NavLink to="/admin">Admin</NavLink> : null}
               <NavLink to={isAuthenticated ? "/dashboard" : "/auth"}>
                 {isAuthenticated ? "Dashboard" : "Login"}

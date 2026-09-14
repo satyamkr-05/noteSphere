@@ -15,9 +15,9 @@ const topSubjects = [
 
 const faqItems = [
   {
-    question: "How do I upload my notes on NoteSphere?",
+    question: "Who can upload notes on NoteSphere?",
     answer:
-      "Sign in, open the Upload Notes page, add your title, subject, description, and file, then submit it for review."
+      "Only admins and sub admins can upload notes and question papers so the study library stays curated."
   },
   {
     question: "Can I preview notes before downloading them?",
@@ -25,19 +25,19 @@ const faqItems = [
       "Yes. Approved notes can be previewed directly inside the platform so users can quickly check the content before downloading."
   },
   {
-    question: "How are uploaded notes approved?",
+    question: "How is the library kept clean?",
     answer:
-      "Each upload goes through an admin review process to help keep the library clean, relevant, and safe for students."
+      "Admins manage uploads directly and can remove duplicate, outdated, or incorrect content."
   },
   {
-    question: "Will my profile show my uploads and activity?",
+    question: "Will my profile show my activity?",
     answer:
-      "Yes. Your profile displays your uploaded notes, profile picture, upload stats, and your note download activity."
+      "Yes. Your profile displays your account details and note download activity."
   },
   {
-    question: "What file types can I share?",
+    question: "What file types are available?",
     answer:
-      "You can upload common document formats supported by the platform, such as PDFs and study documents, as long as they follow the upload rules."
+      "The library supports common study document formats added by admins, including PDFs and related study material."
   }
 ];
 
@@ -148,11 +148,10 @@ export default function HomePage({ reloadKey, showToast }) {
         <div className="hero__content reveal">
           <span className="eyebrow">Where sharp notes meet smarter learning</span>
           <h1>Smarter notes, better study experience.</h1>
-          <p>Sign up, upload notes, and explore useful study material in one place.</p>
+          <p>Sign up, explore curated notes, and find useful study material in one place.</p>
 
           <div className="hero__actions">
-            <Link to="/upload" className="btn btn--primary">Upload Notes</Link>
-            <Link to="/explore" className="btn btn--secondary">Browse Notes</Link>
+            <Link to="/explore" className="btn btn--primary">Browse Notes</Link>
             <Link to="/question-bank" className="btn btn--secondary">Question Bank</Link>
             {isAuthenticated ? (
               <Link to="/dashboard" className="btn btn--secondary">Dashboard</Link>
@@ -298,7 +297,7 @@ export default function HomePage({ reloadKey, showToast }) {
           <div className="section-heading reveal">
             <span className="eyebrow">FAQ</span>
             <h2>Common questions, answered clearly</h2>
-            <p>Everything new users usually want to know before they start uploading and exploring notes.</p>
+            <p>Everything new users usually want to know before exploring notes and question papers.</p>
           </div>
 
           <div className="faq-list">
@@ -330,7 +329,7 @@ export default function HomePage({ reloadKey, showToast }) {
                 <i className="fa-regular fa-comments"></i>
                 <div>
                   <h3>Ask anything</h3>
-                  <p>Share doubts about uploads, downloads, approvals, or your account.</p>
+                  <p>Share doubts about downloads, available material, or your account.</p>
                 </div>
               </article>
               <article className="info-card glass-card reveal is-visible">

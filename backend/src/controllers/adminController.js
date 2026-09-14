@@ -82,17 +82,6 @@ function validateRequiredTextField(res, label, value, maxLength) {
   return normalizedValue;
 }
 
-function validateStatus(status) {
-  const normalizedStatus = normalizeText(status).toLowerCase();
-  const allowedStatuses = ["pending", "approved", "rejected"];
-
-  if (!allowedStatuses.includes(normalizedStatus)) {
-    throw new AppError("Status must be pending, approved, or rejected.", 400);
-  }
-
-  return normalizedStatus;
-}
-
 function buildTextSearchFilter(search = "") {
   const normalizedSearch = search.trim();
 
@@ -299,7 +288,7 @@ export const updateAdminNote = asyncHandler(async (req, res) => {
     throw new AppError("Note not found.", 404);
   }
 
-  const { title, subject, description, featured, status } = req.body;
+  const { title, subject, description, featured } = req.body;
 
   note.title = validateRequiredTextField(res, "Title", title, NOTE_LIMITS.titleMaxLength);
   note.subject = validateRequiredTextField(res, "Subject", subject, NOTE_LIMITS.subjectMaxLength);
@@ -311,43 +300,11 @@ export const updateAdminNote = asyncHandler(async (req, res) => {
   );
   note.featured = featured === true || featured === "true";
 
-  if (status !== undefined) {
-    note.status = validateStatus(status);
-    note.reviewedBy = req.user._id;
-    note.reviewedAt = new Date();
-  }
-
   await note.save();
   await note.populate("uploadedBy", "name email");
   await note.populate("reviewedBy", "name email");
 
   res.json({ note: serializeNote(req, note) });
-});
-
-async function updateReviewStatus(req, res, nextStatus) {
-  const note = await findNoteWithRelations(req.params.id);
-
-  if (!note) {
-    throw new AppError("Note not found.", 404);
-  }
-
-  note.status = nextStatus;
-  note.reviewedBy = req.user._id;
-  note.reviewedAt = new Date();
-
-  await note.save();
-  await note.populate("uploadedBy", "name email");
-  await note.populate("reviewedBy", "name email");
-
-  res.json({ note: serializeNote(req, note) });
-}
-
-export const approveNote = asyncHandler(async (req, res) => {
-  await updateReviewStatus(req, res, "approved");
-});
-
-export const rejectNote = asyncHandler(async (req, res) => {
-  await updateReviewStatus(req, res, "rejected");
 });
 
 export const deleteAdminNote = asyncHandler(async (req, res) => {
@@ -361,32 +318,6 @@ export const deleteAdminNote = asyncHandler(async (req, res) => {
   await note.deleteOne();
 
   res.json({ message: "Note deleted successfully." });
-});
-
-async function updateQuestionPaperReviewStatus(req, res, nextStatus) {
-  const questionPaper = await findQuestionPaperWithRelations(req.params.id);
-
-  if (!questionPaper) {
-    throw new AppError("Question paper not found.", 404);
-  }
-
-  questionPaper.status = nextStatus;
-  questionPaper.reviewedBy = req.user._id;
-  questionPaper.reviewedAt = new Date();
-
-  await questionPaper.save();
-  await questionPaper.populate("uploadedBy", "name email");
-  await questionPaper.populate("reviewedBy", "name email");
-
-  res.json({ questionPaper: serializeQuestionPaper(req, questionPaper) });
-}
-
-export const approveQuestionPaper = asyncHandler(async (req, res) => {
-  await updateQuestionPaperReviewStatus(req, res, "approved");
-});
-
-export const rejectQuestionPaper = asyncHandler(async (req, res) => {
-  await updateQuestionPaperReviewStatus(req, res, "rejected");
 });
 
 export const deleteAdminQuestionPaper = asyncHandler(async (req, res) => {
