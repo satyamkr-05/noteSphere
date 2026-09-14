@@ -156,7 +156,8 @@ export const requestPasswordReset = asyncHandler(async (req, res) => {
       resetUrl,
       expiresAt
     });
-  } catch {
+  } catch (error) {
+    console.error("Password reset email failed:", error);
     user.passwordResetToken = undefined;
     user.passwordResetExpiresAt = undefined;
     await user.save();

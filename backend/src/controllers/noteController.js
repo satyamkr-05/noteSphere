@@ -343,10 +343,10 @@ export const createNote = asyncHandler(async (req, res) => {
       unitName: normalizedUnitName,
       topicName: normalizedTopicName,
       description: normalizedDescription,
-      status: "approved",
+      status: req.user.isAdmin ? "approved" : "pending",
       reviewedBy: null,
       reviewedAt: null,
-      featured: featured === "true",
+      featured: req.user.isAdmin && featured === "true",
       fileName: req.file.originalname,
       filePath: storedFilePath,
       fileHash,
@@ -414,11 +414,11 @@ export const updateNote = asyncHandler(async (req, res) => {
       description,
       NOTE_LIMITS.descriptionMaxLength
     ) ?? note.description;
-  if (featured !== undefined) {
+  if (req.user.isAdmin && featured !== undefined) {
     note.featured = featured === "true" || featured === true;
   }
 
-  note.status = "approved";
+  note.status = req.user.isAdmin ? "approved" : "pending";
   note.reviewedBy = null;
   note.reviewedAt = null;
 

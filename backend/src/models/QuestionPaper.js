@@ -61,7 +61,7 @@ const questionPaperSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ["pending", "approved", "rejected"],
-      default: "approved"
+      default: "pending"
     },
     featured: {
       type: Boolean,

@@ -12,7 +12,7 @@ function fileFilter(_req, file, callback) {
   const hasAllowedMimeType = NOTE_FILE_MIME_TYPES.includes(file.mimetype);
   const hasAllowedExtension = NOTE_FILE_EXTENSIONS.includes(extension);
 
-  if (hasAllowedMimeType || hasAllowedExtension) {
+  if (hasAllowedMimeType && hasAllowedExtension) {
     callback(null, true);
     return;
   }

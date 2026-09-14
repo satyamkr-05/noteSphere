@@ -3,7 +3,6 @@ import fs from "fs";
 import path from "path";
 import { pipeline } from "stream/promises";
 import { DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { getApiPublicUrl, getR2Config, getStorageMode, uploadDir } from "../config/runtime.js";
 
 const STORAGE_KEY_PREFIXES = {
@@ -199,27 +198,3 @@ export function buildAvatarUrl(avatarPath) {
   return `${getApiPublicUrl()}/users/avatar/${encodeURI(normalizedKey)}`;
 }
 
-export async function createAvatarAccessUrl(avatarPath) {
-  const normalizedKey = normalizeStorageKey(avatarPath);
-
-  if (!normalizedKey) {
-    return "";
-  }
-
-  if (getStorageMode() !== "r2") {
-    return buildAvatarUrl(normalizedKey);
-  }
-
-  const { bucket } = getR2Config();
-
-  return getSignedUrl(
-    getS3Client(),
-    new GetObjectCommand({
-      Bucket: bucket,
-      Key: normalizedKey
-    }),
-    {
-      expiresIn: 60 * 60 * 24 * 7
-    }
-  );
-}

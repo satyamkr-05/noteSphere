@@ -438,10 +438,10 @@ export const createQuestionPaper = asyncHandler(async (req, res) => {
       examYear: normalizedExamYear,
       examType: normalizedExamType,
       description: normalizedDescription,
-      status: "approved",
+      status: req.user.isAdmin ? "approved" : "pending",
       reviewedBy: null,
       reviewedAt: null,
-      featured: featured === "true",
+      featured: req.user.isAdmin && featured === "true",
       fileName: req.file.originalname,
       filePath: storedFilePath,
       fileHash,
@@ -514,11 +514,11 @@ export const updateQuestionPaper = asyncHandler(async (req, res) => {
       QUESTION_BANK_LIMITS.descriptionMaxLength
     ) ?? paper.description;
 
-  if (featured !== undefined) {
+  if (req.user.isAdmin && featured !== undefined) {
     paper.featured = featured === "true" || featured === true;
   }
 
-  paper.status = "approved";
+  paper.status = req.user.isAdmin ? "approved" : "pending";
   paper.reviewedBy = null;
   paper.reviewedAt = null;
 
