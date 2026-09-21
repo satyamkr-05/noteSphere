@@ -1,0 +1,17 @@
+{
+  "name": "NoteSphere",
+  "short_name": "NoteSphere",
+  "description": "Curated study notes and question papers for students.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#5b7cff",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "96x96",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

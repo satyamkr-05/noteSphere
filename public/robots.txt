@@ -1,5 +1,7 @@
 User-agent: *
 Allow: /
+Allow: /favicon.svg
+Allow: /site.webmanifest
 
 Disallow: /admin
 Disallow: /admin-login
