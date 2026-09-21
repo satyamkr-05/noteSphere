@@ -22,6 +22,30 @@ import { AUTH_EXPIRED_EVENT } from "./services/api";
 import { getStorageItem, setStorageItem } from "./utils/storage";
 
 const THEME_KEY = "notesphere-theme";
+const DEFAULT_META = {
+  title: "NoteSphere | Study Notes and Question Papers",
+  description: "Browse curated study notes and question papers for faster exam preparation."
+};
+
+const ROUTE_META = {
+  "/": DEFAULT_META,
+  "/explore": {
+    title: "Explore Study Notes | NoteSphere",
+    description: "Search and preview curated study notes by title, subject, and course on NoteSphere."
+  },
+  "/question-bank": {
+    title: "Browse Question Papers | NoteSphere",
+    description: "Find previous question papers by subject, university, course, semester, year, and exam type."
+  },
+  "/auth": {
+    title: "Login or Signup | NoteSphere",
+    description: "Access your NoteSphere account to browse notes, question papers, and study activity."
+  },
+  "/forgot-password": {
+    title: "Reset Password | NoteSphere",
+    description: "Request a secure password reset link for your NoteSphere account."
+  }
+};
 
 function AppContent({ isDark, onToggleTheme, reloadKey, showToast, triggerReload }) {
   const { logout } = useAuth();
@@ -30,6 +54,17 @@ function AppContent({ isDark, onToggleTheme, reloadKey, showToast, triggerReload
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const metadata = ROUTE_META[location.pathname] || DEFAULT_META;
+    document.title = metadata.title;
+    setMetaTag("description", metadata.description);
+    setMetaProperty("og:title", metadata.title);
+    setMetaProperty("og:description", metadata.description);
+    setMetaProperty("og:url", `https://www.noteshapre.in${location.pathname}`);
+    setMetaTag("twitter:title", metadata.title);
+    setMetaTag("twitter:description", metadata.description);
   }, [location.pathname]);
 
   function handleLogout() {
@@ -129,4 +164,18 @@ function getInitialTheme() {
   const savedTheme = getStorageItem(THEME_KEY);
   const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false;
   return savedTheme ? savedTheme === "dark" : prefersDark;
+}
+
+function setMetaTag(name, content) {
+  const element = document.querySelector(`meta[name="${name}"]`);
+  if (element) {
+    element.setAttribute("content", content);
+  }
+}
+
+function setMetaProperty(property, content) {
+  const element = document.querySelector(`meta[property="${property}"]`);
+  if (element) {
+    element.setAttribute("content", content);
+  }
 }
