@@ -89,7 +89,7 @@ textarea,
 select {
   width: 100%;
   border: 1px solid transparent;
-  border-radius: 16px;
+  border-radius: 9px;
   padding: 0.95rem 1rem;
   background: rgba(255, 255, 255, 0.65);
   color: var(--text);
@@ -1260,18 +1260,38 @@ body.dark-theme .profile-card__info-value {
 
 .explore-toolbar {
   display: flex;
-  gap: 1rem;
+  gap: 0.8rem;
   align-items: center;
   justify-content: space-between;
-  padding: 0.85rem 0.95rem;
-  margin-bottom: 1.4rem;
+  max-width: 860px;
+  margin: 0 auto 1.4rem;
+  padding: 0.72rem 0.78rem 0.72rem 1rem;
+  border: 1px solid rgba(91, 124, 255, 0.16);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 14px 38px rgba(38, 52, 105, 0.08);
+}
+
+body.dark-theme .explore-toolbar {
+  border-color: rgba(138, 160, 255, 0.22);
+  background: rgba(12, 18, 36, 0.72);
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.24);
 }
 
 .search-field {
   display: flex;
   align-items: center;
-  gap: 0.9rem;
+  gap: 0.85rem;
   flex: 1;
+  min-width: 0;
+}
+
+.explore-toolbar .btn,
+.admin-toolbar-actions .btn {
+  min-height: 2.2rem;
+  padding: 0.42rem 0.8rem;
+  border-radius: 12px;
+  font-size: 0.86rem;
 }
 
 .notes-grid {
@@ -2512,7 +2532,7 @@ body.dark-theme .admin-select {
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.75rem;
-  max-width: 760px;
+  max-width: 860px;
   margin: 0 auto;
   padding: 0.72rem 0.78rem 0.72rem 1rem;
   border: 1px solid rgba(91, 124, 255, 0.16);

@@ -122,7 +122,7 @@ export default function QuestionBankPage({ showToast }) {
             <i className="fa-solid fa-magnifying-glass"></i>
             <input
               type="text"
-              placeholder="Search by subject, university, course, or title"
+              placeholder="Search by subject or title"
               aria-label="Search question papers"
               value={searchQuery}
               onChange={(event) => {
