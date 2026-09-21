@@ -117,8 +117,8 @@ export default function QuestionBankPage({ showToast }) {
           <p>Search by title, subject, university, course, semester, year, or exam type.</p>
         </div>
 
-        <div className="question-bank-toolbar glass-card reveal">
-          <div className="search-field">
+        <div className="question-bank-toolbar reveal">
+          <div className="question-bank-search glass-card">
             <i className="fa-solid fa-magnifying-glass"></i>
             <input
               type="text"
@@ -130,11 +130,18 @@ export default function QuestionBankPage({ showToast }) {
                 setCurrentPage(1);
               }}
             />
+            {searchQuery ? (
+              <button
+                type="button"
+                className="question-bank-search__clear"
+                onClick={clearSearch}
+                aria-label="Clear question paper search"
+                title="Clear search"
+              >
+                Clear
+              </button>
+            ) : null}
           </div>
-
-          <button type="button" className="btn btn--secondary" onClick={clearSearch}>
-            Clear
-          </button>
         </div>
 
         {isLoading ? <div className="page-status glass-card">Loading question papers...</div> : null}
