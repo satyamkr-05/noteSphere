@@ -936,8 +936,8 @@ GitHub: https://github.com/satyamkr-05
 
 ### 🌐 Connect With Me
 
-- **Portfolio:** [Portfolio Website](https://satyam-dev-portfolio.netlify.app/)
-- **LinkedIn:** [Satyam Kumar on LinkedIn](https://www.linkedin.com/in/satyam-kumar5)
+- **Portfolio:** [Satyam's Portfolio](https://satyam-dev-portfolio.netlify.app/)
+- **LinkedIn:** [Satyam Kumar](https://www.linkedin.com/in/satyam-kumar5)
 - **GitHub:** [@satyamkr-05](https://github.com/satyamkr-05)
 - **Project Repo:** [NoteSphere Repository](https://github.com/satyamkr-05/noteSphere)
 
