@@ -564,17 +564,20 @@ CLIENT_URL=http://localhost:5173
 
 FILE_STORAGE_PROVIDER=local
 ```
-##Cloudflare R2
+### Cloudflare R2 Configuration
 
+Set up your environment variables for Cloudflare R2 storage:
+
+```env
 FILE_STORAGE_PROVIDER=r2
 
 R2_ACCOUNT_ID=your_cloudflare_account_id
 R2_ACCESS_KEY_ID=your_r2_access_key
 R2_SECRET_ACCESS_KEY=your_r2_secret_key
 R2_BUCKET_NAME=your_r2_bucket_name
-
-⚠️ Never commit real credentials, API keys, JWT secrets, database credentials or .env files to GitHub.
-
+```
+[!WARNING]
+Security Notice: Never commit real credentials, API keys, JWT secrets, database credentials, or .env files to GitHub. Always use .gitignore to keep them private.
 
 ## 💻 Local Development
 
@@ -933,8 +936,8 @@ GitHub: https://github.com/satyamkr-05
 
 ### 🌐 Connect With Me
 
-- **Portfolio:** [Your Portfolio Website](https://your-portfolio-link.com)
-- **LinkedIn:** [Satyam Kumar on LinkedIn](https://linkedin.com/in/your-profile)
+- **Portfolio:** [Portfolio Website](https://satyam-dev-portfolio.netlify.app/)
+- **LinkedIn:** [Satyam Kumar on LinkedIn](https://www.linkedin.com/in/satyam-kumar5)
 - **GitHub:** [@satyamkr-05](https://github.com/satyamkr-05)
 - **Project Repo:** [NoteSphere Repository](https://github.com/satyamkr-05/noteSphere)
 
